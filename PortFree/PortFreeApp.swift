@@ -29,9 +29,9 @@ struct PortFreeApp: App {
                 .onAppear {
                     appDelegate.openWindowAction = {
                         NSApp.activate(ignoringOtherApps: true)
-                        for window in NSApp.windows where window.identifier?.rawValue.contains("main") == true || window.title.contains("Port") {
+                        // Try to find and focus an existing main window
+                        if let window = NSApp.windows.first(where: { $0.isVisible || $0.identifier?.rawValue.contains("main") == true }) {
                             window.makeKeyAndOrderFront(nil)
-                            return
                         }
                     }
                 }

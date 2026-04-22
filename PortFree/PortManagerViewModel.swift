@@ -16,10 +16,18 @@ final class PortManagerViewModel: ObservableObject {
     @Published var isScanningAll = false
     @Published var launchAtLogin: Bool {
         didSet {
-            if launchAtLogin {
-                try? SMAppService.mainApp.register()
-            } else {
-                try? SMAppService.mainApp.unregister()
+            do {
+                if launchAtLogin {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                // Revert to actual system state on failure
+                let actual = (SMAppService.mainApp.status == .enabled)
+                if launchAtLogin != actual {
+                    launchAtLogin = actual
+                }
             }
         }
     }
@@ -51,7 +59,7 @@ final class PortManagerViewModel: ObservableObject {
         case .prompt:
             return languageSettings.text(.appDescription)
         case let .foundProcess(processName, pid):
-            return languageSettings.text(.foundProcess, [processName, pid])
+            return languageSettings.text(.foundProcess, [processName, String(pid)])
         case let .portFree(port):
             return languageSettings.text(.portFreeStatus, [languageSettings.plainNumber(port)])
         case .inspectFailed:
@@ -129,6 +137,7 @@ final class PortManagerViewModel: ObservableObject {
 
     func killCurrentProcess(force: Bool) async {
         guard let result = currentResult, result.isOccupied else { return }
+        let targetPort = result.port
 
         errorState = nil
         isLoading = true
@@ -139,37 +148,42 @@ final class PortManagerViewModel: ObservableObject {
                 try PortInspector.killProcess(pid: result.pid, force: force)
             }.value
 
-            statusState = force ? .forceEnded(port: result.port) : .ended(port: result.port)
-            insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "success")
+            statusState = force ? .forceEnded(port: targetPort) : .ended(port: targetPort)
+            insertHistory(port: targetPort, result: result, actionType: force ? "forceTerminate" : "terminate", status: "success")
 
-            do {
-                let refreshed = try await Task.detached(priority: .userInitiated) {
-                    try PortInspector.inspect(port: result.port)
-                }.value
-                currentResult = refreshed
-            } catch {
-                currentResult = nil
+            // Only refresh if user hasn't switched to a different port
+            if portInput == String(targetPort) {
+                do {
+                    let refreshed = try await Task.detached(priority: .userInitiated) {
+                        try PortInspector.inspect(port: targetPort)
+                    }.value
+                    currentResult = refreshed
+                } catch {
+                    currentResult = nil
+                }
             }
         } catch {
             // If normal kill fails (e.g. Permission Denied), try with admin privileges on main thread
             do {
                 try PortInspector.killProcessWithAdmin(pid: result.pid, force: force)
 
-                statusState = force ? .forceEnded(port: result.port) : .ended(port: result.port)
-                insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "success")
+                statusState = force ? .forceEnded(port: targetPort) : .ended(port: targetPort)
+                insertHistory(port: targetPort, result: result, actionType: force ? "forceTerminate" : "terminate", status: "success")
 
-                do {
-                    let refreshed = try await Task.detached(priority: .userInitiated) {
-                        try PortInspector.inspect(port: result.port)
-                    }.value
-                    currentResult = refreshed
-                } catch {
-                    currentResult = nil
+                if portInput == String(targetPort) {
+                    do {
+                        let refreshed = try await Task.detached(priority: .userInitiated) {
+                            try PortInspector.inspect(port: targetPort)
+                        }.value
+                        currentResult = refreshed
+                    } catch {
+                        currentResult = nil
+                    }
                 }
             } catch {
                 errorState = readableErrorState(error)
                 statusState = force ? .forceEndFailed : .endFailed
-                insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "failed")
+                insertHistory(port: targetPort, result: result, actionType: force ? "forceTerminate" : "terminate", status: "failed")
             }
         }
     }
@@ -237,7 +251,7 @@ final class PortManagerViewModel: ObservableObject {
         guard let result = currentResult else {
             return languageSettings.text(.forceKillMessageDefault)
         }
-        return languageSettings.text(.forceKillMessageDetail, [result.processName, result.pid])
+        return languageSettings.text(.forceKillMessageDetail, [result.processName, String(result.pid)])
     }
 
     func historySubtitle(for item: Item) -> String {
@@ -279,6 +293,9 @@ final class PortManagerViewModel: ObservableObject {
             resultStatus: status
         )
         items.insert(item, at: 0)
+        if items.count > 100 {
+            items = Array(items.prefix(100))
+        }
     }
 
     private func readableErrorState(_ error: Error) -> ErrorState {
@@ -351,9 +368,9 @@ enum PortInspector {
         nonisolated var errorDescription: String? {
             switch self {
             case let .commandFailed(message):
-                return message.isEmpty ? "命令执行失败" : message
+                return message.isEmpty ? "Command execution failed" : message
             case .invalidResponse:
-                return "系统返回了无法解析的端口信息"
+                return "System returned unparseable port information"
             }
         }
     }
@@ -450,10 +467,29 @@ enum PortInspector {
             let pid = Int(fields[1]) ?? 0
             let user = fields[2]
             let protocolName = fields.first(where: { $0 == "TCP" || $0 == "UDP" }) ?? "TCP"
-            let endpoint = fields.suffix(2).joined(separator: " ")
 
-            // Extract port number from the NAME column (e.g. "*:8080" or "[::1]:5173")
-            let nameField = fields.last(where: { $0.contains("LISTEN") }) != nil ? fields[fields.count - 2] : ""
+            // lsof NAME column is the last field (contains "(LISTEN)").
+            // The second-to-last field is the endpoint like "*:8080" or "[::1]:5173".
+            // Extract port from the endpoint field by finding the last colon.
+            let nameField: String
+            if fields.count >= 2 {
+                // The state "(LISTEN)" is the last field; endpoint is second-to-last
+                let candidateEndpoint = fields[fields.count - 2]
+                // Also handle cases where "(LISTEN)" is merged: e.g. "*:8080(LISTEN)"
+                let lastField = fields[fields.count - 1]
+                if lastField.contains("LISTEN") {
+                    nameField = candidateEndpoint
+                } else if candidateEndpoint.contains("LISTEN") {
+                    // State merged with endpoint in the same field
+                    nameField = candidateEndpoint.replacingOccurrences(of: "(LISTEN)", with: "")
+                } else {
+                    nameField = ""
+                }
+            } else {
+                nameField = ""
+            }
+            let endpoint = nameField.isEmpty ? "-" : nameField
+
             let portString: String
             if let colonIndex = nameField.lastIndex(of: ":") {
                 portString = String(nameField[nameField.index(after: colonIndex)...])
