@@ -146,6 +146,17 @@ enum AppTextKey: String {
     case addCustomPort
     case removeCustomPort
     case clearHistory
+    case installCLI
+    case uninstallCLI
+    case cliInstalled
+    case cliNotInstalled
+    case cliDescription
+    case searchPorts
+    case noMatchingPorts
+    case batchSelect
+    case killSelected
+    case autoRefresh
+    case off
 }
 
 @MainActor
@@ -379,7 +390,18 @@ enum AppTranslations {
             "showAll": "Show all %@ ports",
             "addCustomPort": "Add custom port",
             "removeCustomPort": "Remove custom port",
-            "clearHistory": "Clear history"
+            "clearHistory": "Clear history",
+            "installCLI": "Install CLI (fp)",
+            "uninstallCLI": "Uninstall CLI",
+            "cliInstalled": "CLI installed — use fp in Terminal",
+            "cliNotInstalled": "CLI not installed",
+            "cliDescription": "Use fp <port> to check ports from Terminal",
+            "searchPorts": "Search ports...",
+            "noMatchingPorts": "No matching ports",
+            "batchSelect": "Batch select",
+            "killSelected": "Kill %@ selected",
+            "autoRefresh": "Auto refresh",
+            "off": "Off"
         ],
         .simplifiedChinese: [
             "language": "语言",
@@ -457,7 +479,18 @@ enum AppTranslations {
             "showAll": "展开全部 %@ 个端口",
             "addCustomPort": "添加自定义端口",
             "removeCustomPort": "移除自定义端口",
-            "clearHistory": "清除历史"
+            "clearHistory": "清除历史",
+            "installCLI": "安装命令行工具 (fp)",
+            "uninstallCLI": "卸载命令行工具",
+            "cliInstalled": "命令行已安装 — 在终端使用 fp",
+            "cliNotInstalled": "命令行未安装",
+            "cliDescription": "使用 fp <端口号> 在终端中查询端口",
+            "searchPorts": "搜索端口...",
+            "noMatchingPorts": "无匹配端口",
+            "batchSelect": "批量选择",
+            "killSelected": "终止 %@ 个已选",
+            "autoRefresh": "自动刷新",
+            "off": "关闭"
         ],
         .traditionalChinese: [
             "language": "語言",
@@ -535,7 +568,18 @@ enum AppTranslations {
             "showAll": "展開全部 %@ 個連接埠",
             "addCustomPort": "新增自訂連接埠",
             "removeCustomPort": "移除自訂連接埠",
-            "clearHistory": "清除歷史"
+            "clearHistory": "清除歷史",
+            "installCLI": "安裝命令列工具 (fp)",
+            "uninstallCLI": "解除安裝命令列工具",
+            "cliInstalled": "命令列已安裝 — 在終端機使用 fp",
+            "cliNotInstalled": "命令列未安裝",
+            "cliDescription": "使用 fp <連接埠號> 在終端機中查詢連接埠",
+            "searchPorts": "搜尋連接埠...",
+            "noMatchingPorts": "無符合的連接埠",
+            "batchSelect": "批次選取",
+            "killSelected": "終止 %@ 個已選",
+            "autoRefresh": "自動重新整理",
+            "off": "關閉"
         ],
         .japanese: [
             "language": "言語",
@@ -613,7 +657,18 @@ enum AppTranslations {
             "showAll": "全 %@ ポートを表示",
             "addCustomPort": "カスタムポートを追加",
             "removeCustomPort": "カスタムポートを削除",
-            "clearHistory": "履歴を消去"
+            "clearHistory": "履歴を消去",
+            "installCLI": "CLIをインストール (fp)",
+            "uninstallCLI": "CLIをアンインストール",
+            "cliInstalled": "CLIインストール済み — ターミナルで fp を使用",
+            "cliNotInstalled": "CLI未インストール",
+            "cliDescription": "fp <ポート> でターミナルからポートを確認",
+            "searchPorts": "ポートを検索...",
+            "noMatchingPorts": "一致するポートなし",
+            "batchSelect": "一括選択",
+            "killSelected": "%@ 件を終了",
+            "autoRefresh": "自動更新",
+            "off": "オフ"
         ],
         .german: [
             "language": "Sprache",
@@ -691,7 +746,18 @@ enum AppTranslations {
             "showAll": "Alle %@ Ports anzeigen",
             "addCustomPort": "Benutzerdefinierten Port hinzufügen",
             "removeCustomPort": "Benutzerdefinierten Port entfernen",
-            "clearHistory": "Verlauf löschen"
+            "clearHistory": "Verlauf löschen",
+            "installCLI": "CLI installieren (fp)",
+            "uninstallCLI": "CLI deinstallieren",
+            "cliInstalled": "CLI installiert — fp im Terminal verwenden",
+            "cliNotInstalled": "CLI nicht installiert",
+            "cliDescription": "Mit fp <Port> Ports im Terminal prüfen",
+            "searchPorts": "Ports suchen...",
+            "noMatchingPorts": "Keine passenden Ports",
+            "batchSelect": "Mehrfachauswahl",
+            "killSelected": "%@ ausgewählte beenden",
+            "autoRefresh": "Automatisch aktualisieren",
+            "off": "Aus"
         ],
         .french: [
             "language": "Langue",
@@ -769,7 +835,18 @@ enum AppTranslations {
             "showAll": "Afficher les %@ ports",
             "addCustomPort": "Ajouter un port personnalisé",
             "removeCustomPort": "Supprimer le port personnalisé",
-            "clearHistory": "Effacer l'historique"
+            "clearHistory": "Effacer l'historique",
+            "installCLI": "Installer CLI (fp)",
+            "uninstallCLI": "Désinstaller CLI",
+            "cliInstalled": "CLI installé — utilisez fp dans le Terminal",
+            "cliNotInstalled": "CLI non installé",
+            "cliDescription": "Utilisez fp <port> pour vérifier les ports dans le Terminal",
+            "searchPorts": "Rechercher des ports...",
+            "noMatchingPorts": "Aucun port correspondant",
+            "batchSelect": "Sélection multiple",
+            "killSelected": "Terminer %@ sélectionnés",
+            "autoRefresh": "Actualisation auto",
+            "off": "Désactivé"
         ],
         .spanish: [
             "language": "Idioma",
@@ -847,7 +924,18 @@ enum AppTranslations {
             "showAll": "Mostrar los %@ puertos",
             "addCustomPort": "Añadir puerto personalizado",
             "removeCustomPort": "Eliminar puerto personalizado",
-            "clearHistory": "Borrar historial"
+            "clearHistory": "Borrar historial",
+            "installCLI": "Instalar CLI (fp)",
+            "uninstallCLI": "Desinstalar CLI",
+            "cliInstalled": "CLI instalado — usa fp en la Terminal",
+            "cliNotInstalled": "CLI no instalado",
+            "cliDescription": "Usa fp <puerto> para verificar puertos en la Terminal",
+            "searchPorts": "Buscar puertos...",
+            "noMatchingPorts": "No se encontraron puertos",
+            "batchSelect": "Selección múltiple",
+            "killSelected": "Terminar %@ seleccionados",
+            "autoRefresh": "Actualización automática",
+            "off": "Desactivado"
         ]
     ]
 }

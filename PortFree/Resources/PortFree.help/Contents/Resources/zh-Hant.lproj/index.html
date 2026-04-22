@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="anchors">
+<title>PortFree 輔助說明</title>
+<style>
+:root { color-scheme: light dark; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", sans-serif;
+    max-width: 600px; margin: 40px auto; padding: 0 20px;
+    color: #1d1d1f; background: #fff; line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; background: #1d1d1f; }
+    code { background: #3a3a3c; border-color: #555; color: #f5f5f7; }
+    .shortcut { background: #444; border-color: #666; border-bottom-color: #555; color: #eee; box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+}
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: #86868b; font-size: 15px; margin-bottom: 30px; }
+h2 { font-size: 20px; font-weight: 600; margin-top: 28px; border-bottom: 1px solid #d2d2d7; padding-bottom: 6px; }
+code { background: #e8e8ed; padding: 2px 6px; border-radius: 4px; font-size: 13px; border: 1px solid #d0d0d5; color: #1d1d1f; }
+.shortcut { display: inline-block; background: #e8e8e8; border: 1px solid #b0b0b0; border-bottom: 2px solid #999; border-radius: 5px; padding: 1px 8px; font-size: 12px; font-family: -apple-system; color: #333; box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+ul { padding-left: 20px; }
+li { margin-bottom: 6px; }
+.section { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>⚡ PortFree</h1>
+<p class="subtitle">一款用於快速檢查和釋放 macOS 上被佔用連接埠的開發者工具。</p>
+
+<div class="section">
+<h2>快速開始</h2>
+<p>在輸入欄中輸入連接埠號（1–65535），點擊 <strong>檢查</strong> 查看佔用該連接埠的處理程序。如果發現處理程序，可以點擊 <strong>結束處理程序</strong> 或 <strong>強制結束</strong> 來終止它。</p>
+</div>
+
+<div class="section">
+<h2>主要功能</h2>
+<ul>
+<li><strong>連接埠檢查</strong> — 查看任何連接埠的處理程序名稱、PID、使用者、協定和端點資訊。</li>
+<li><strong>快捷連接埠</strong> — 一鍵存取常用連接埠（80、443、3000、5173、8080），還可以新增自訂連接埠。</li>
+<li><strong>掃描所有連接埠</strong> — 查看系統上所有正在監聽的 TCP 連接埠。</li>
+<li><strong>選單列</strong> — 從選單列快速檢查連接埠，無需開啟主視窗。</li>
+<li><strong>歷史記錄</strong> — 保存最近的檢查和操作記錄，方便快速查閱。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>全域快速鍵</h2>
+<p>在任何地方按下 <span class="shortcut">⌘</span> <span class="shortcut">⇧</span> <span class="shortcut">P</span> 即可將 PortFree 視窗切換到前台。</p>
+</div>
+
+<div class="section">
+<h2>命令列工具 (fp)</h2>
+<p>在側邊欄的設定部分安裝命令列工具。安裝後，在終端機中使用：</p>
+<ul>
+<li><code>fp 3000</code> — 查看佔用 3000 連接埠的處理程序，並可選擇終止。</li>
+<li><code>fp list</code> — 列出所有監聽中的 TCP 連接埠。</li>
+<li><code>fp help</code> — 顯示命令列輔助說明。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>管理員權限</h2>
+<p>某些系統處理程序需要管理員權限才能終止。PortFree 會在需要時自動提示輸入密碼。</p>
+</div>
+
+<div class="section">
+<h2>設定</h2>
+<ul>
+<li><strong>開機啟動</strong> — 登入時自動啟動 PortFree。</li>
+<li><strong>語言</strong> — 可從 7 種語言中選擇，或跟隨系統設定。</li>
+<li><strong>安裝 CLI</strong> — 安裝或解除安裝 <code>fp</code> 命令列工具。</li>
+</ul>
+</div>
+
+</body>
+</html>

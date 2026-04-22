@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+
+# Archives & exports
+*.xcarchive
+*.ipa
+*.dmg
+*.pkg
+
+# Python venv
+.venv/
+
+# VS Code
+.vscode/
+
+MARKETING.md
+
+# IDE
+*.idea/
+
+# Signing
+*.p12
+*.mobileprovision
+*.provisionprofile

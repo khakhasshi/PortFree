@@ -1,0 +1,166 @@
+#!/bin/bash
+# fp — PortFree CLI
+# Quick port inspection and process management from your terminal.
+# Usage:
+#   fp <port>    Check which process is using a port and optionally kill it
+#   fp list      List all listening TCP ports
+#   fp help      Show this help message
+
+set -euo pipefail
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+show_help() {
+    echo ""
+    echo -e "${BOLD}⚡ fp — PortFree CLI${RESET}"
+    echo ""
+    echo "Usage:"
+    echo -e "  ${CYAN}fp <port>${RESET}    Check which process is using a port"
+    echo -e "  ${CYAN}fp list${RESET}      List all listening TCP ports"
+    echo -e "  ${CYAN}fp help${RESET}      Show this help message"
+    echo ""
+    echo "Examples:"
+    echo -e "  ${CYAN}fp 3000${RESET}      Check port 3000"
+    echo -e "  ${CYAN}fp 8080${RESET}      Check port 8080"
+    echo -e "  ${CYAN}fp list${RESET}      Show all occupied ports"
+    echo ""
+}
+
+list_ports() {
+    echo ""
+    echo -e "${BOLD}⚡ All Listening TCP Ports${RESET}"
+    echo ""
+
+    local output
+    output=$(/usr/sbin/lsof -nP -iTCP -sTCP:LISTEN 2>/dev/null || true)
+
+    if [ -z "$output" ]; then
+        echo -e "${GREEN}No listening ports found.${RESET}"
+        return
+    fi
+
+    # Parse and deduplicate by port
+    echo "$output" | awk 'NR>1 {
+        name = $(NF-1)
+        n = split(name, parts, ":")
+        port = parts[n]
+        if (port ~ /^[0-9]+$/ && !seen[port]++) {
+            printf "  %-8s %-20s PID %-8s %s\n", port, $1, $2, $3
+        }
+    }' | sort -t' ' -k1 -n
+
+    echo ""
+}
+
+check_port() {
+    local port="$1"
+
+    # Validate port number
+    if ! [[ "$port" =~ ^[0-9]+$ ]] || [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+        echo -e "${RED}Error: Port must be a number between 1 and 65535.${RESET}"
+        exit 1
+    fi
+
+    echo ""
+    echo -e "${BOLD}⚡ Checking port ${port}...${RESET}"
+    echo ""
+
+    local output
+    output=$(/usr/sbin/lsof -nP -iTCP:"${port}" -sTCP:LISTEN 2>/dev/null || true)
+
+    if [ -z "$output" ]; then
+        echo -e "${GREEN}✓ Port ${port} is free.${RESET}"
+        echo ""
+        return
+    fi
+
+    # Parse the first data line
+    local line
+    line=$(echo "$output" | sed -n '2p')
+
+    if [ -z "$line" ]; then
+        echo -e "${GREEN}✓ Port ${port} is free.${RESET}"
+        echo ""
+        return
+    fi
+
+    local process_name pid user
+    process_name=$(echo "$line" | awk '{print $1}')
+    pid=$(echo "$line" | awk '{print $2}')
+    user=$(echo "$line" | awk '{print $3}')
+
+    echo -e "${YELLOW}⚠ Port ${port} is occupied${RESET}"
+    echo ""
+    echo -e "  Process:  ${BOLD}${process_name}${RESET}"
+    echo -e "  PID:      ${pid}"
+    echo -e "  User:     ${user}"
+    echo ""
+
+    # Ask user what to do
+    echo -e "Actions:"
+    echo -e "  ${CYAN}k${RESET} — Kill process (SIGTERM)"
+    echo -e "  ${CYAN}f${RESET} — Force kill (SIGKILL / kill -9)"
+    echo -e "  ${CYAN}q${RESET} — Quit (do nothing)"
+    echo ""
+    printf "Choose [k/f/q]: "
+    read -r choice
+
+    case "$choice" in
+        k|K)
+            if kill "$pid" 2>/dev/null; then
+                echo -e "${GREEN}✓ Sent SIGTERM to ${process_name} (PID ${pid}).${RESET}"
+            else
+                echo -e "${YELLOW}Permission denied. Trying with admin privileges...${RESET}"
+                if sudo kill "$pid" 2>/dev/null; then
+                    echo -e "${GREEN}✓ Sent SIGTERM to ${process_name} (PID ${pid}) with admin privileges.${RESET}"
+                else
+                    echo -e "${RED}✗ Failed to kill process.${RESET}"
+                    exit 1
+                fi
+            fi
+            ;;
+        f|F)
+            if kill -9 "$pid" 2>/dev/null; then
+                echo -e "${GREEN}✓ Sent SIGKILL to ${process_name} (PID ${pid}).${RESET}"
+            else
+                echo -e "${YELLOW}Permission denied. Trying with admin privileges...${RESET}"
+                if sudo kill -9 "$pid" 2>/dev/null; then
+                    echo -e "${GREEN}✓ Sent SIGKILL to ${process_name} (PID ${pid}) with admin privileges.${RESET}"
+                else
+                    echo -e "${RED}✗ Failed to force kill process.${RESET}"
+                    exit 1
+                fi
+            fi
+            ;;
+        q|Q|"")
+            echo "Cancelled."
+            ;;
+        *)
+            echo "Unknown option. Cancelled."
+            ;;
+    esac
+    echo ""
+}
+
+# Main
+if [ $# -eq 0 ]; then
+    show_help
+    exit 0
+fi
+
+case "$1" in
+    help|--help|-h)
+        show_help
+        ;;
+    list|ls)
+        list_ports
+        ;;
+    *)
+        check_port "$1"
+        ;;
+esac

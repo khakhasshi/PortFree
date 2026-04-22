@@ -14,6 +14,9 @@ final class PortManagerViewModel: ObservableObject {
     @Published var showingForceKillConfirmation = false
     @Published var allListeningPorts: [PortInspectionResult] = []
     @Published var isScanningAll = false
+    @Published var selectedPortsForKill: Set<Int> = []
+    @Published var portSearchText = ""
+    @Published var autoRefreshInterval: TimeInterval = 2  // default 2s
     @Published var launchAtLogin: Bool {
         didSet {
             do {
@@ -34,6 +37,7 @@ final class PortManagerViewModel: ObservableObject {
 
     @Published private var statusState: StatusState = .prompt
     @Published private var errorState: ErrorState?
+    @Published var cliInstalled: Bool = false
 
     @Published var customQuickPorts: [Int] {
         didSet {
@@ -42,6 +46,18 @@ final class PortManagerViewModel: ObservableObject {
     }
 
     let defaultQuickPorts = [3000, 5173, 8000, 8080, 8081, 9000]
+
+    var filteredListeningPorts: [PortInspectionResult] {
+        guard !portSearchText.isEmpty else { return allListeningPorts }
+        let query = portSearchText.lowercased()
+        return allListeningPorts.filter {
+            String($0.port).contains(query) ||
+            $0.processName.lowercased().contains(query)
+        }
+    }
+
+    private var autoRefreshTask: Task<Void, Never>?
+    private var lastPortSnapshot: Set<Int> = []
 
     var quickPorts: [Int] {
         let merged = defaultQuickPorts + customQuickPorts.filter { !defaultQuickPorts.contains($0) }
@@ -52,6 +68,10 @@ final class PortManagerViewModel: ObservableObject {
         self.languageSettings = languageSettings
         self.launchAtLogin = (SMAppService.mainApp.status == .enabled)
         self.customQuickPorts = (UserDefaults.standard.array(forKey: "portfree.customQuickPorts") as? [Int]) ?? []
+        self.cliInstalled = FileManager.default.fileExists(atPath: "/usr/local/bin/fp")
+        let savedInterval = UserDefaults.standard.object(forKey: "portfree.autoRefreshInterval")
+        self.autoRefreshInterval = (savedInterval as? TimeInterval) ?? 2
+        restartAutoRefresh()
     }
 
     var statusMessage: String {
@@ -193,10 +213,24 @@ final class PortManagerViewModel: ObservableObject {
         defer { isScanningAll = false }
 
         do {
-            let results = try await Task.detached(priority: .userInitiated) {
+            let results = try await Task.detached(priority: .utility) {
                 try PortInspector.scanAllListening()
             }.value
-            allListeningPorts = results.sorted { $0.port < $1.port }
+            let sorted = results.sorted { $0.port < $1.port }
+
+            // Diff check: skip UI & widget update if ports unchanged
+            let newSnapshot = Set(sorted.map(\.port))
+            if newSnapshot == lastPortSnapshot && sorted.count == allListeningPorts.count {
+                return
+            }
+            lastPortSnapshot = newSnapshot
+
+            allListeningPorts = sorted
+            // Share data with widget
+            let entries = sorted.map {
+                PortFreeShared.PortEntry(port: $0.port, processName: $0.processName, pid: $0.pid, user: $0.user)
+            }
+            PortFreeShared.savePorts(entries)
         } catch {
             allListeningPorts = []
         }
@@ -241,6 +275,75 @@ final class PortManagerViewModel: ObservableObject {
 
     func removeCustomPort(_ port: Int) {
         customQuickPorts.removeAll { $0 == port }
+    }
+
+    func installCLI() {
+        guard let scriptURL = Bundle.main.url(forResource: "fp", withExtension: nil) else { return }
+        let src = scriptURL.path.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        let dest = "/usr/local/bin/fp"
+        let mkdir = "/bin/mkdir -p /usr/local/bin"
+        let appleScript = "do shell script \"\(mkdir) && /bin/cp \\\"\(src)\\\" \\\"\(dest)\\\" && /bin/chmod +x \\\"\(dest)\\\"\" with administrator privileges"
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: appleScript)?.executeAndReturnError(&errorInfo)
+        cliInstalled = FileManager.default.fileExists(atPath: dest)
+    }
+
+    func uninstallCLI() {
+        let appleScript = "do shell script \"/bin/rm -f /usr/local/bin/fp\" with administrator privileges"
+        var errorInfo: NSDictionary?
+        NSAppleScript(source: appleScript)?.executeAndReturnError(&errorInfo)
+        cliInstalled = FileManager.default.fileExists(atPath: "/usr/local/bin/fp")
+    }
+
+    func killSelectedPorts() async {
+        let pidsToKill = allListeningPorts
+            .filter { selectedPortsForKill.contains($0.port) && $0.isOccupied }
+            .map { (pid: $0.pid, port: $0.port, processName: $0.processName) }
+
+        guard !pidsToKill.isEmpty else { return }
+
+        let uniquePids = Set(pidsToKill.map(\.pid))
+
+        for pid in uniquePids {
+            do {
+                try await Task.detached(priority: .userInitiated) {
+                    try PortInspector.killProcess(pid: pid, force: false)
+                }.value
+            } catch {
+                try? PortInspector.killProcessWithAdmin(pid: pid, force: false)
+            }
+        }
+
+        selectedPortsForKill.removeAll()
+        await scanAllPorts()
+    }
+
+    func setAutoRefreshInterval(_ interval: TimeInterval) {
+        autoRefreshInterval = interval
+        UserDefaults.standard.set(interval, forKey: "portfree.autoRefreshInterval")
+        restartAutoRefresh()
+    }
+
+    func restartAutoRefresh() {
+        autoRefreshTask?.cancel()
+        autoRefreshTask = nil
+
+        guard autoRefreshInterval > 0 else { return }
+
+        autoRefreshTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64((self?.autoRefreshInterval ?? 5) * 1_000_000_000))
+                guard !Task.isCancelled else { break }
+                // Skip if app is not active (saves CPU when minimized/hidden)
+                guard NSApplication.shared.isActive else { continue }
+                await self?.scanAllPorts()
+            }
+        }
+    }
+
+    func stopAutoRefresh() {
+        autoRefreshTask?.cancel()
+        autoRefreshTask = nil
     }
 
     func recentItems(limit: Int) -> [Item] {

@@ -14,6 +14,8 @@ struct ContentView: View {
     @State private var isPortListExpanded = false
     @State private var showAddPortField = false
     @State private var newPortInput = ""
+    @State private var isBatchSelecting = false
+    @FocusState private var isPortInputFocused: Bool
 
     var body: some View {
         NavigationSplitView {
@@ -29,6 +31,8 @@ struct ContentView: View {
                 }
                 .padding(24)
                 .frame(maxWidth: 760, alignment: .leading)
+                .animation(.easeInOut(duration: 0.25), value: viewModel.currentResult?.port)
+                .animation(.easeInOut(duration: 0.25), value: viewModel.currentResult?.isOccupied)
             }
             .background(Color.clear)
             .navigationTitle(t(.portManagement))
@@ -50,7 +54,25 @@ struct ContentView: View {
         List {
             Section(header: HStack {
                 Text(t(.allListeningPorts))
+                if !viewModel.allListeningPorts.isEmpty {
+                    Text("\(viewModel.allListeningPorts.count)")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(.orange))
+                }
                 Spacer()
+                if !viewModel.allListeningPorts.isEmpty {
+                    Button {
+                        withAnimation { isBatchSelecting.toggle() }
+                        if !isBatchSelecting { viewModel.selectedPortsForKill.removeAll() }
+                    } label: {
+                        Image(systemName: isBatchSelecting ? "xmark.circle" : "checklist")
+                    }
+                    .buttonStyle(.plain)
+                    .help(isBatchSelecting ? t(.cancel) : t(.batchSelect))
+                }
                 if viewModel.isScanningAll {
                     ProgressView()
                         .controlSize(.mini)
@@ -64,6 +86,14 @@ struct ContentView: View {
                     .help(t(.scanAllPorts))
                 }
             }) {
+                // Search field
+                if !viewModel.allListeningPorts.isEmpty || !viewModel.portSearchText.isEmpty {
+                    TextField(t(.searchPorts), text: $viewModel.portSearchText)
+                        .textFieldStyle(.roundedBorder)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                }
+
                 if viewModel.allListeningPorts.isEmpty {
                     if viewModel.isScanningAll {
                         Text(t(.scanning))
@@ -82,12 +112,28 @@ struct ContentView: View {
                         .modifier(SidebarRowHoverEffect())
                     }
                 } else {
-                    let visiblePorts = isPortListExpanded ? viewModel.allListeningPorts : Array(viewModel.allListeningPorts.prefix(5))
+                    let filtered = viewModel.filteredListeningPorts
+                    let visiblePorts = isPortListExpanded ? filtered : Array(filtered.prefix(5))
+
+                    if filtered.isEmpty && !viewModel.portSearchText.isEmpty {
+                        Text(t(.noMatchingPorts))
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 10)
+                    }
+
                     ForEach(visiblePorts, id: \.port) { result in
                         Button {
-                            viewModel.fillPortAndCheck(result.port)
+                            if isBatchSelecting {
+                                togglePortSelection(result.port)
+                            } else {
+                                viewModel.fillPortAndCheck(result.port)
+                            }
                         } label: {
                             HStack {
+                                if isBatchSelecting {
+                                    Image(systemName: viewModel.selectedPortsForKill.contains(result.port) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(viewModel.selectedPortsForKill.contains(result.port) ? .blue : .secondary)
+                                }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(t(.portWithNumber, languageSettings.plainNumber(result.port)))
                                         .font(.headline)
@@ -108,12 +154,31 @@ struct ContentView: View {
                         .modifier(SidebarRowHoverEffect())
                     }
 
-                    if viewModel.allListeningPorts.count > 5 {
+                    if isBatchSelecting && !viewModel.selectedPortsForKill.isEmpty {
+                        Button {
+                            Task { await viewModel.killSelectedPorts() }
+                            isBatchSelecting = false
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash")
+                                Text(t(.killSelected, String(viewModel.selectedPortsForKill.count)))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .controlSize(.small)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                    }
+
+                    if filtered.count > 5 {
                         Button {
                             withAnimation { isPortListExpanded.toggle() }
                         } label: {
                             HStack {
-                                Text(isPortListExpanded ? t(.collapse) : t(.showAll, languageSettings.plainNumber(viewModel.allListeningPorts.count)))
+                                Text(isPortListExpanded ? t(.collapse) : t(.showAll, languageSettings.plainNumber(filtered.count)))
                                     .font(.caption)
                                     .foregroundStyle(Color.accentColor)
                                 Spacer()
@@ -247,12 +312,64 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
+
+                Divider()
+
+                HStack {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundStyle(.secondary)
+                    Picker(t(.autoRefresh), selection: Binding(
+                        get: { viewModel.autoRefreshInterval },
+                        set: { viewModel.setAutoRefreshInterval($0) }
+                    )) {
+                        Text(t(.off)).tag(0.0)
+                        Text("2s").tag(2.0)
+                        Text("3s").tag(3.0)
+                        Text("5s").tag(5.0)
+                        Text("10s").tag(10.0)
+                        Text("30s").tag(30.0)
+                    }
+                    .pickerStyle(.menu)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Image(systemName: viewModel.cliInstalled ? "terminal.fill" : "terminal")
+                            .foregroundStyle(viewModel.cliInstalled ? .green : .secondary)
+                        Text(viewModel.cliInstalled ? t(.cliInstalled) : t(.cliNotInstalled))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(t(.cliDescription))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Button(viewModel.cliInstalled ? t(.uninstallCLI) : t(.installCLI)) {
+                        if viewModel.cliInstalled {
+                            viewModel.uninstallCLI()
+                        } else {
+                            viewModel.installCLI()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
             }
         }
         .navigationTitle("PortFree")
         .listStyle(.sidebar)
         .task {
             await viewModel.scanAllPorts()
+            viewModel.restartAutoRefresh()
+        }
+        .onDisappear {
+            viewModel.stopAutoRefresh()
         }
     }
 
@@ -287,6 +404,7 @@ struct ContentView: View {
                 TextField(t(.portPlaceholder), text: $viewModel.portInput)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 240)
+                    .focused($isPortInputFocused)
                     .onSubmit {
                         Task {
                             await viewModel.inspectCurrentPort()
@@ -323,20 +441,25 @@ struct ContentView: View {
     }
 
     private var quickActionStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(viewModel.quickPorts, id: \.self) { port in
-                    Button {
-                        viewModel.fillPortAndCheck(port)
-                    } label: {
-                        Label("\(port)", systemImage: "bolt.circle")
+        VStack(alignment: .leading, spacing: 8) {
+            Text(t(.quickPorts))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(viewModel.quickPorts, id: \.self) { port in
+                        Button {
+                            viewModel.fillPortAndCheck(port)
+                        } label: {
+                            Label("\(port)", systemImage: "bolt.circle")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                        .modifier(HoverLiftEffect())
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.regular)
-                    .modifier(HoverLiftEffect())
                 }
+                .padding(.vertical, 4)
             }
-            .padding(.vertical, 4)
         }
     }
 
@@ -362,26 +485,30 @@ struct ContentView: View {
                 Divider()
 
                 if result.isOccupied {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 16)], spacing: 16) {
-                        detailCard(title: t(.process), value: result.processName)
-                        detailCard(title: t(.pid), value: String(result.pid))
-                        detailCard(title: t(.user), value: result.user)
-                        detailCard(title: t(.protocol), value: result.protocolName)
-                        detailCard(title: t(.endpoint), value: result.endpoint)
-                        detailCard(title: t(.command), value: result.command)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 10)], spacing: 10) {
+                        detailCard(title: t(.process), value: result.processName, icon: "app.dashed")
+                        detailCard(title: t(.pid), value: String(result.pid), icon: "number")
+                        detailCard(title: t(.user), value: result.user, icon: "person")
+                        detailCard(title: t(.protocol), value: result.protocolName, icon: "network")
+                        detailCard(title: t(.endpoint), value: result.endpoint, icon: "point.topleft.down.to.point.bottomright.curvepath")
+                        detailCard(title: t(.command), value: result.command, icon: "terminal")
                     }
 
                     HStack(spacing: 12) {
-                        Button(t(.endProcess)) {
+                        Button {
                             Task {
                                 await viewModel.killCurrentProcess(force: false)
                             }
+                        } label: {
+                            Label(t(.endProcess), systemImage: "stop.circle")
                         }
                         .buttonStyle(.borderedProminent)
                         .disabled(viewModel.isLoading)
 
-                        Button(t(.forceEnd)) {
+                        Button {
                             viewModel.showingForceKillConfirmation = true
+                        } label: {
+                            Label(t(.forceEnd), systemImage: "xmark.octagon")
                         }
                         .buttonStyle(.bordered)
                         .tint(.red)
@@ -391,9 +518,13 @@ struct ContentView: View {
 
                         Button {
                             viewModel.copyProcessInfo()
-                            showCopiedToast = true
+                            withAnimation(.spring(duration: 0.3)) {
+                                showCopiedToast = true
+                            }
                             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                                showCopiedToast = false
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    showCopiedToast = false
+                                }
                             }
                         } label: {
                             Label(t(.copyInfo), systemImage: "doc.on.doc")
@@ -402,44 +533,94 @@ struct ContentView: View {
                     }
 
                     if showCopiedToast {
-                        Label(t(.copiedToClipboard), systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                            .transition(.opacity)
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text(t(.copiedToClipboard))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(.green.opacity(0.1), in: Capsule())
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .opacity
+                        ))
                     }
                 } else {
-                    Label(t(.noProcessDetected), systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                    HStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(t(.noProcessDetected))
+                                .font(.headline)
+                                .foregroundStyle(.green)
+                            Text(t(.portWithNumber, languageSettings.plainNumber(result.port)))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 8)
                 }
             }
             .padding(20)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .modifier(HoverCardEffect())
+            .transition(.asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .bottom)),
+                removal: .opacity
+            ))
         } else {
-            ContentUnavailableView(
-                t(.notCheckedYet),
-                systemImage: "point.3.connected.trianglepath.dotted",
-                description: Text(t(.notCheckedYetDescription))
-            )
+            VStack(spacing: 16) {
+                Image(systemName: "point.3.connected.trianglepath.dotted")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.quaternary)
+                Text(t(.notCheckedYet))
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Text(t(.notCheckedYetDescription))
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                Button {
+                    isPortInputFocused = true
+                } label: {
+                    Label(t(.inspectPort), systemImage: "magnifyingglass")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
             .frame(maxWidth: .infinity, minHeight: 280)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .modifier(HoverCardEffect())
         }
     }
 
-    private func detailCard(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func detailCard(title: String, value: String, icon: String = "") -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 3) {
+                if !icon.isEmpty {
+                    Image(systemName: icon)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
+                Text(title)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             Text(value)
-                .font(.body.weight(.medium))
+                .font(.callout.weight(.medium))
                 .textSelection(.enabled)
+                .lineLimit(2)
+                .truncationMode(.middle)
         }
-        .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
-        .padding(16)
-        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .modifier(HoverCardEffect(cornerRadius: 16, baseOpacity: 0.04, hoverOpacity: 0.08, yOffset: -2))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .modifier(HoverCardEffect(cornerRadius: 10, baseOpacity: 0.04, hoverOpacity: 0.08, yOffset: -1))
     }
 
     private func statusBadge(for result: PortInspectionResult) -> some View {
@@ -464,6 +645,14 @@ struct ContentView: View {
             viewModel.addCustomPort(port)
             newPortInput = ""
             withAnimation { showAddPortField = false }
+        }
+    }
+
+    private func togglePortSelection(_ port: Int) {
+        if viewModel.selectedPortsForKill.contains(port) {
+            viewModel.selectedPortsForKill.remove(port)
+        } else {
+            viewModel.selectedPortsForKill.insert(port)
         }
     }
 }

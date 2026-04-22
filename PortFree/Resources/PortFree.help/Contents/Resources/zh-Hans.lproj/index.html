@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="anchors">
+<title>PortFree 帮助</title>
+<style>
+:root { color-scheme: light dark; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    max-width: 600px; margin: 40px auto; padding: 0 20px;
+    color: #1d1d1f; background: #fff; line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; background: #1d1d1f; }
+    code { background: #3a3a3c; border-color: #555; color: #f5f5f7; }
+    .shortcut { background: #444; border-color: #666; border-bottom-color: #555; color: #eee; box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+}
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: #86868b; font-size: 15px; margin-bottom: 30px; }
+h2 { font-size: 20px; font-weight: 600; margin-top: 28px; border-bottom: 1px solid #d2d2d7; padding-bottom: 6px; }
+code { background: #e8e8ed; padding: 2px 6px; border-radius: 4px; font-size: 13px; border: 1px solid #d0d0d5; color: #1d1d1f; }
+.shortcut { display: inline-block; background: #e8e8e8; border: 1px solid #b0b0b0; border-bottom: 2px solid #999; border-radius: 5px; padding: 1px 8px; font-size: 12px; font-family: -apple-system; color: #333; box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+ul { padding-left: 20px; }
+li { margin-bottom: 6px; }
+.section { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>⚡ PortFree</h1>
+<p class="subtitle">一款用于快速检查和释放 macOS 上被占用端口的开发者工具。</p>
+
+<div class="section">
+<h2>快速开始</h2>
+<p>在输入框中输入端口号（1–65535），点击 <strong>检查</strong> 查看占用该端口的进程。如果发现进程，可以点击 <strong>结束进程</strong> 或 <strong>强制结束</strong> 来终止它。</p>
+</div>
+
+<div class="section">
+<h2>主要功能</h2>
+<ul>
+<li><strong>端口检查</strong> — 查看任何端口的进程名称、PID、用户、协议和端点信息。</li>
+<li><strong>快捷端口</strong> — 一键访问常用端口（80、443、3000、5173、8080），还可以添加自定义端口。</li>
+<li><strong>扫描所有端口</strong> — 查看系统上所有正在监听的 TCP 端口。</li>
+<li><strong>菜单栏</strong> — 从菜单栏快速检查端口，无需打开主窗口。</li>
+<li><strong>历史记录</strong> — 保存最近的检查和操作记录，方便快速查阅。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>全局快捷键</h2>
+<p>在任何地方按下 <span class="shortcut">⌘</span> <span class="shortcut">⇧</span> <span class="shortcut">P</span> 即可将 PortFree 窗口切换到前台。</p>
+</div>
+
+<div class="section">
+<h2>命令行工具 (fp)</h2>
+<p>在侧栏的设置部分安装命令行工具。安装后，在终端中使用：</p>
+<ul>
+<li><code>fp 3000</code> — 查看占用 3000 端口的进程，并可选择终止。</li>
+<li><code>fp list</code> — 列出所有监听中的 TCP 端口。</li>
+<li><code>fp help</code> — 显示命令行帮助。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>管理员权限</h2>
+<p>某些系统进程需要管理员权限才能终止。PortFree 会在需要时自动提示输入密码。</p>
+</div>
+
+<div class="section">
+<h2>设置</h2>
+<ul>
+<li><strong>开机启动</strong> — 登录时自动启动 PortFree。</li>
+<li><strong>语言</strong> — 可从 7 种语言中选择，或跟随系统设置。</li>
+<li><strong>安装 CLI</strong> — 安装或卸载 <code>fp</code> 命令行工具。</li>
+</ul>
+</div>
+
+</body>
+</html>

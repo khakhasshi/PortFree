@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="anchors">
+<title>Ayuda de PortFree</title>
+<style>
+:root { color-scheme: light dark; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    max-width: 600px; margin: 40px auto; padding: 0 20px;
+    color: #1d1d1f; background: #fff; line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; background: #1d1d1f; }
+    code { background: #3a3a3c; border-color: #555; color: #f5f5f7; }
+    .shortcut { background: #444; border-color: #666; border-bottom-color: #555; color: #eee; box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+}
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: #86868b; font-size: 15px; margin-bottom: 30px; }
+h2 { font-size: 20px; font-weight: 600; margin-top: 28px; border-bottom: 1px solid #d2d2d7; padding-bottom: 6px; }
+code { background: #e8e8ed; padding: 2px 6px; border-radius: 4px; font-size: 13px; border: 1px solid #d0d0d5; color: #1d1d1f; }
+.shortcut { display: inline-block; background: #e8e8e8; border: 1px solid #b0b0b0; border-bottom: 2px solid #999; border-radius: 5px; padding: 1px 8px; font-size: 12px; font-family: -apple-system; color: #333; box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+ul { padding-left: 20px; }
+li { margin-bottom: 6px; }
+.section { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>⚡ PortFree</h1>
+<p class="subtitle">Una herramienta para desarrolladores para verificar y liberar rápidamente puertos ocupados en macOS.</p>
+
+<div class="section">
+<h2>Primeros pasos</h2>
+<p>Ingresa un número de puerto (1–65535) en el campo de entrada y haz clic en <strong>Verificar</strong> para ver qué proceso está usando ese puerto. Si se encuentra un proceso, puedes terminarlo con <strong>Terminar proceso</strong> o <strong>Forzar cierre</strong>.</p>
+</div>
+
+<div class="section">
+<h2>Funciones principales</h2>
+<ul>
+<li><strong>Verificación de puertos</strong> — Ver el nombre del proceso, PID, usuario, protocolo y punto final de cualquier puerto.</li>
+<li><strong>Puertos rápidos</strong> — Acceso con un clic a puertos comunes (80, 443, 3000, 5173, 8080). Agrega tus propios puertos personalizados.</li>
+<li><strong>Escanear todos los puertos</strong> — Ver todos los puertos TCP en escucha en tu sistema.</li>
+<li><strong>Barra de menús</strong> — Accede a PortFree desde la barra de menús para verificaciones rápidas sin abrir la ventana principal.</li>
+<li><strong>Historial</strong> — Las verificaciones y acciones recientes se guardan para referencia rápida.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>Atajo global</h2>
+<p>Presiona <span class="shortcut">⌘</span> <span class="shortcut">⇧</span> <span class="shortcut">P</span> desde cualquier lugar para traer la ventana de PortFree al frente.</p>
+</div>
+
+<div class="section">
+<h2>Herramienta CLI (fp)</h2>
+<p>Instala el CLI desde la sección de Ajustes en la barra lateral. Una vez instalado, úsalo en la Terminal:</p>
+<ul>
+<li><code>fp 3000</code> — Verificar qué proceso está usando el puerto 3000 y terminarlo si es necesario.</li>
+<li><code>fp list</code> — Listar todos los puertos TCP en escucha.</li>
+<li><code>fp help</code> — Mostrar la ayuda del CLI.</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>Privilegios de administrador</h2>
+<p>Algunos procesos del sistema requieren privilegios de administrador para ser terminados. PortFree solicitará automáticamente tu contraseña cuando sea necesario.</p>
+</div>
+
+<div class="section">
+<h2>Ajustes</h2>
+<ul>
+<li><strong>Iniciar al arrancar</strong> — Iniciar PortFree automáticamente al iniciar sesión.</li>
+<li><strong>Idioma</strong> — Elegir entre 7 idiomas o seguir la configuración del sistema.</li>
+<li><strong>Instalar CLI</strong> — Instalar o desinstalar la herramienta de línea de comandos <code>fp</code>.</li>
+</ul>
+</div>
+
+</body>
+</html>

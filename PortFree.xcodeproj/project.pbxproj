@@ -6,11 +6,45 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EE4D6A437345431DBCAA3D26 /* PortFreeWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D95E7AD4B7524439B0C5504A /* PortFreeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9E85939BC8204B7B9880FE38 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ADF5BEBB2F98B75600FD4822 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 81E4EC5991F547FB8C595C9A;
+			remoteInfo = PortFreeWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		EC6CD4F6540241F69E065701 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				EE4D6A437345431DBCAA3D26 /* PortFreeWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		ADF5BEC32F98B75600FD4822 /* PortFree.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PortFree.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D95E7AD4B7524439B0C5504A /* PortFreeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PortFreeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		3D43C70C78AC452C80D4A7BC /* PortFreeWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PortFreeWidget;
+			sourceTree = "<group>";
+		};
 		ADF5BEC52F98B75600FD4822 /* PortFree */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = PortFree;
@@ -19,6 +53,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		4D35E407788F430280423854 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ADF5BEC02F98B75600FD4822 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -33,6 +74,7 @@
 			isa = PBXGroup;
 			children = (
 				ADF5BEC52F98B75600FD4822 /* PortFree */,
+				3D43C70C78AC452C80D4A7BC /* PortFreeWidget */,
 				ADF5BEC42F98B75600FD4822 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				ADF5BEC32F98B75600FD4822 /* PortFree.app */,
+				D95E7AD4B7524439B0C5504A /* PortFreeWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,6 +91,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		81E4EC5991F547FB8C595C9A /* PortFreeWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD44437417B145A99657956C /* Build configuration list for PBXNativeTarget "PortFreeWidgetExtension" */;
+			buildPhases = (
+				93AB29C4A6454270A4871788 /* Sources */,
+				4D35E407788F430280423854 /* Frameworks */,
+				372A1F638EF044EF90FB6078 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3D43C70C78AC452C80D4A7BC /* PortFreeWidget */,
+			);
+			name = PortFreeWidgetExtension;
+			productName = PortFreeWidgetExtension;
+			productReference = D95E7AD4B7524439B0C5504A /* PortFreeWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		ADF5BEC22F98B75600FD4822 /* PortFree */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = ADF5BED02F98B75600FD4822 /* Build configuration list for PBXNativeTarget "PortFree" */;
@@ -55,10 +118,12 @@
 				ADF5BEBF2F98B75600FD4822 /* Sources */,
 				ADF5BEC02F98B75600FD4822 /* Frameworks */,
 				ADF5BEC12F98B75600FD4822 /* Resources */,
+				EC6CD4F6540241F69E065701 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				952E212430A945EF9B95AAB0 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				ADF5BEC52F98B75600FD4822 /* PortFree */,
@@ -80,6 +145,9 @@
 				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
+					81E4EC5991F547FB8C595C9A = {
+						CreatedOnToolsVersion = 26.4;
+					};
 					ADF5BEC22F98B75600FD4822 = {
 						CreatedOnToolsVersion = 26.4;
 					};
@@ -100,11 +168,19 @@
 			projectRoot = "";
 			targets = (
 				ADF5BEC22F98B75600FD4822 /* PortFree */,
+				81E4EC5991F547FB8C595C9A /* PortFreeWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		372A1F638EF044EF90FB6078 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ADF5BEC12F98B75600FD4822 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -115,6 +191,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		93AB29C4A6454270A4871788 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ADF5BEBF2F98B75600FD4822 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -124,7 +207,45 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		952E212430A945EF9B95AAB0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 81E4EC5991F547FB8C595C9A /* PortFreeWidgetExtension */;
+			targetProxy = 9E85939BC8204B7B9880FE38 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		9E85939BC8204B7B98801234 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = PortFreeWidget/PortFreeWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3PS7QR8L7W;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PortFreeWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PortFree Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = JINGZHE.PortFree.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		ADF5BECE2F98B75600FD4822 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -250,6 +371,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PortFree/PortFree.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -259,6 +381,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PortFree/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -266,7 +389,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = JINGZHE.PortFree;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -284,6 +407,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PortFree/PortFree.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -293,6 +417,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PortFree/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -300,7 +425,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = JINGZHE.PortFree;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -312,6 +437,36 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
+		};
+		EB3B8B10172A48309C84C4B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = PortFreeWidget/PortFreeWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3PS7QR8L7W;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PortFreeWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "PortFree Widget";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = JINGZHE.PortFree.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
@@ -330,6 +485,15 @@
 			buildConfigurations = (
 				ADF5BED12F98B75600FD4822 /* Debug */,
 				ADF5BED22F98B75600FD4822 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DD44437417B145A99657956C /* Build configuration list for PBXNativeTarget "PortFreeWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EB3B8B10172A48309C84C4B2 /* Debug */,
+				9E85939BC8204B7B98801234 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="anchors">
+<title>PortFree ヘルプ</title>
+<style>
+:root { color-scheme: light dark; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+    max-width: 600px; margin: 40px auto; padding: 0 20px;
+    color: #1d1d1f; background: #fff; line-height: 1.6;
+}
+@media (prefers-color-scheme: dark) {
+    body { color: #f5f5f7; background: #1d1d1f; }
+    code { background: #3a3a3c; border-color: #555; color: #f5f5f7; }
+    .shortcut { background: #444; border-color: #666; border-bottom-color: #555; color: #eee; box-shadow: 0 1px 0 rgba(0,0,0,0.3); }
+}
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: #86868b; font-size: 15px; margin-bottom: 30px; }
+h2 { font-size: 20px; font-weight: 600; margin-top: 28px; border-bottom: 1px solid #d2d2d7; padding-bottom: 6px; }
+code { background: #e8e8ed; padding: 2px 6px; border-radius: 4px; font-size: 13px; border: 1px solid #d0d0d5; color: #1d1d1f; }
+.shortcut { display: inline-block; background: #e8e8e8; border: 1px solid #b0b0b0; border-bottom: 2px solid #999; border-radius: 5px; padding: 1px 8px; font-size: 12px; font-family: -apple-system; color: #333; box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+ul { padding-left: 20px; }
+li { margin-bottom: 6px; }
+.section { margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>⚡ PortFree</h1>
+<p class="subtitle">macOS 上で使用中のポートを素早く確認・解放する開発者向けツールです。</p>
+
+<div class="section">
+<h2>はじめに</h2>
+<p>入力欄にポート番号（1〜65535）を入力し、<strong>検査</strong> をクリックして、そのポートを使用しているプロセスを確認します。プロセスが見つかった場合は、<strong>プロセスを終了</strong> または <strong>強制終了</strong> で終了できます。</p>
+</div>
+
+<div class="section">
+<h2>主な機能</h2>
+<ul>
+<li><strong>ポート検査</strong> — 任意のポートのプロセス名、PID、ユーザー、プロトコル、エンドポイント情報を確認。</li>
+<li><strong>クイックポート</strong> — よく使うポート（80、443、3000、5173、8080）にワンクリックでアクセス。カスタムポートの追加も可能。</li>
+<li><strong>全ポートスキャン</strong> — システム上のすべてのリスニング中の TCP ポートを一覧表示。</li>
+<li><strong>メニューバー</strong> — メニューバーからメインウィンドウを開かずにポートをすばやく確認。</li>
+<li><strong>履歴</strong> — 最近の検査と操作が保存され、すぐに参照可能。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>グローバルホットキー</h2>
+<p>どこからでも <span class="shortcut">⌘</span> <span class="shortcut">⇧</span> <span class="shortcut">P</span> を押すと、PortFree ウィンドウが前面に表示されます。</p>
+</div>
+
+<div class="section">
+<h2>CLIツール (fp)</h2>
+<p>サイドバーの設定セクションから CLI をインストールします。インストール後、ターミナルで使用できます：</p>
+<ul>
+<li><code>fp 3000</code> — ポート 3000 を使用しているプロセスを確認し、必要に応じて終了。</li>
+<li><code>fp list</code> — すべてのリスニング中の TCP ポートを一覧表示。</li>
+<li><code>fp help</code> — CLI ヘルプを表示。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>管理者権限</h2>
+<p>一部のシステムプロセスは終了するために管理者権限が必要です。PortFree は必要に応じて自動的にパスワード入力を求めます。</p>
+</div>
+
+<div class="section">
+<h2>設定</h2>
+<ul>
+<li><strong>ログイン時に起動</strong> — ログイン時に PortFree を自動起動。</li>
+<li><strong>言語</strong> — 7 つの言語から選択するか、システム設定に従います。</li>
+<li><strong>CLI インストール</strong> — <code>fp</code> コマンドラインツールのインストール・アンインストール。</li>
+</ul>
+</div>
+
+</body>
+</html>
