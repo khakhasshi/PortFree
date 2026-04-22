@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import ServiceManagement
 import SwiftUI
 
 @MainActor
@@ -11,6 +12,17 @@ final class PortManagerViewModel: ObservableObject {
     @Published var currentResult: PortInspectionResult?
     @Published var isLoading = false
     @Published var showingForceKillConfirmation = false
+    @Published var allListeningPorts: [PortInspectionResult] = []
+    @Published var isScanningAll = false
+    @Published var launchAtLogin: Bool {
+        didSet {
+            if launchAtLogin {
+                try? SMAppService.mainApp.register()
+            } else {
+                try? SMAppService.mainApp.unregister()
+            }
+        }
+    }
 
     @Published private var statusState: StatusState = .prompt
     @Published private var errorState: ErrorState?
@@ -19,6 +31,7 @@ final class PortManagerViewModel: ObservableObject {
 
     init(languageSettings: AppLanguageSettings) {
         self.languageSettings = languageSettings
+        self.launchAtLogin = (SMAppService.mainApp.status == .enabled)
     }
 
     var statusMessage: String {
@@ -126,10 +139,58 @@ final class PortManagerViewModel: ObservableObject {
                 currentResult = nil
             }
         } catch {
-            errorState = readableErrorState(error)
-            statusState = force ? .forceEndFailed : .endFailed
-            insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "failed")
+            // If normal kill fails (e.g. Permission Denied), try with admin privileges
+            do {
+                try await Task.detached(priority: .userInitiated) {
+                    try PortInspector.killProcessWithAdmin(pid: result.pid, force: force)
+                }.value
+
+                statusState = force ? .forceEnded(port: result.port) : .ended(port: result.port)
+                insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "success")
+
+                do {
+                    let refreshed = try await Task.detached(priority: .userInitiated) {
+                        try PortInspector.inspect(port: result.port)
+                    }.value
+                    currentResult = refreshed
+                } catch {
+                    currentResult = nil
+                }
+            } catch {
+                errorState = readableErrorState(error)
+                statusState = force ? .forceEndFailed : .endFailed
+                insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "failed")
+            }
         }
+    }
+
+    func scanAllPorts() async {
+        isScanningAll = true
+        defer { isScanningAll = false }
+
+        do {
+            let results = try await Task.detached(priority: .userInitiated) {
+                try PortInspector.scanAllListening()
+            }.value
+            allListeningPorts = results.sorted { $0.port < $1.port }
+        } catch {
+            allListeningPorts = []
+        }
+    }
+
+    func copyProcessInfo() {
+        guard let result = currentResult, result.isOccupied else { return }
+        let info = """
+        Port: \(result.port)
+        Process: \(result.processName)
+        PID: \(result.pid)
+        User: \(result.user)
+        Protocol: \(result.protocolName)
+        Endpoint: \(result.endpoint)
+        Command: \(result.command)
+        """
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(info, forType: .string)
     }
 
     func deleteRecentItems(offsets: IndexSet, limit: Int = 12) {
@@ -319,6 +380,76 @@ enum PortInspector {
         arguments.append(String(pid))
 
         _ = try runCommand(launchPath: "/bin/kill", arguments: arguments)
+    }
+
+    nonisolated static func killProcessWithAdmin(pid: Int, force: Bool) throws {
+        let killCmd = force ? "kill -9 \(pid)" : "kill \(pid)"
+        let script = "do shell script \"\(killCmd)\" with administrator privileges"
+        var errorInfo: NSDictionary?
+        let appleScript = NSAppleScript(source: script)
+        appleScript?.executeAndReturnError(&errorInfo)
+        if let errorInfo {
+            let msg = errorInfo[NSAppleScript.errorMessage] as? String ?? "Authorization failed"
+            throw PortInspectorError.commandFailed(msg)
+        }
+    }
+
+    nonisolated static func scanAllListening() throws -> [PortInspectionResult] {
+        let output = try runCommand(
+            launchPath: "/usr/sbin/lsof",
+            arguments: ["-nP", "-iTCP", "-sTCP:LISTEN"]
+        )
+
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return []
+        }
+
+        let lines = trimmed.split(whereSeparator: \.isNewline).map(String.init)
+        guard lines.count >= 2 else {
+            return []
+        }
+
+        var results: [PortInspectionResult] = []
+        var seenPorts: Set<Int> = []
+
+        for line in lines.dropFirst() {
+            let fields = line.split(whereSeparator: \.isWhitespace).map(String.init)
+            guard fields.count >= 9 else { continue }
+
+            let processName = fields[0]
+            let pid = Int(fields[1]) ?? 0
+            let user = fields[2]
+            let protocolName = fields.first(where: { $0 == "TCP" || $0 == "UDP" }) ?? "TCP"
+            let endpoint = fields.suffix(2).joined(separator: " ")
+
+            // Extract port number from the NAME column (e.g. "*:8080" or "[::1]:5173")
+            let nameField = fields.last(where: { $0.contains("LISTEN") }) != nil ? fields[fields.count - 2] : ""
+            let portString: String
+            if let colonIndex = nameField.lastIndex(of: ":") {
+                portString = String(nameField[nameField.index(after: colonIndex)...])
+            } else {
+                portString = ""
+            }
+            guard let port = Int(portString), port > 0 else { continue }
+
+            // Deduplicate by port number (keep first occurrence)
+            guard !seenPorts.contains(port) else { continue }
+            seenPorts.insert(port)
+
+            results.append(PortInspectionResult(
+                port: port,
+                isOccupied: true,
+                processName: processName,
+                pid: pid,
+                user: user,
+                protocolName: protocolName,
+                command: line,
+                endpoint: endpoint
+            ))
+        }
+
+        return results
     }
 
     @discardableResult

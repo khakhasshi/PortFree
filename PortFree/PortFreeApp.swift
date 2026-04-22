@@ -12,6 +12,7 @@ import SwiftUI
 struct PortFreeApp: App {
     @StateObject private var languageSettings: AppLanguageSettings
     @StateObject private var viewModel: PortManagerViewModel
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     init() {
         let languageSettings = AppLanguageSettings()
@@ -25,6 +26,15 @@ struct PortFreeApp: App {
                 .environmentObject(viewModel)
                 .environmentObject(languageSettings)
                 .environment(\.locale, Locale(identifier: languageSettings.currentLanguage.localeIdentifier))
+                .onAppear {
+                    appDelegate.openWindowAction = {
+                        NSApp.activate(ignoringOtherApps: true)
+                        for window in NSApp.windows where window.identifier?.rawValue.contains("main") == true || window.title.contains("Port") {
+                            window.makeKeyAndOrderFront(nil)
+                            return
+                        }
+                    }
+                }
         }
 
         MenuBarExtra {
@@ -58,4 +68,27 @@ struct PortFreeApp: App {
         outputImage.isTemplate = true
         return outputImage
     }()
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    var openWindowAction: (() -> Void)?
+    private var globalMonitor: Any?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            // Cmd + Shift + P
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            if flags == [.command, .shift], event.charactersIgnoringModifiers?.lowercased() == "p" {
+                DispatchQueue.main.async {
+                    self?.openWindowAction?()
+                }
+            }
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        if let monitor = globalMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
+    }
 }

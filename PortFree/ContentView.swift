@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var viewModel: PortManagerViewModel
     @EnvironmentObject private var languageSettings: AppLanguageSettings
+    @State private var showCopiedToast = false
 
     var body: some View {
         NavigationSplitView {
@@ -44,6 +45,67 @@ struct ContentView: View {
 
     private var sidebar: some View {
         List {
+            Section(header: HStack {
+                Text(t(.allListeningPorts))
+                Spacer()
+                if viewModel.isScanningAll {
+                    ProgressView()
+                        .controlSize(.mini)
+                } else {
+                    Button {
+                        Task { await viewModel.scanAllPorts() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.plain)
+                    .help(t(.scanAllPorts))
+                }
+            }) {
+                if viewModel.allListeningPorts.isEmpty {
+                    if viewModel.isScanningAll {
+                        Text(t(.scanning))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Button {
+                            Task { await viewModel.scanAllPorts() }
+                        } label: {
+                            Label(t(.scanAllPorts), systemImage: "magnifyingglass")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .modifier(SidebarRowHoverEffect())
+                    }
+                } else {
+                    ForEach(viewModel.allListeningPorts, id: \.port) { result in
+                        Button {
+                            viewModel.fillPortAndCheck(result.port)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(t(.portWithNumber, languageSettings.plainNumber(result.port)))
+                                        .font(.headline)
+                                    Text("\(result.processName) · PID \(result.pid)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Circle()
+                                    .fill(.orange)
+                                    .frame(width: 8, height: 8)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .modifier(SidebarRowHoverEffect())
+                    }
+                }
+            }
+
             Section(header: Text(t(.commonPorts))) {
                 ForEach(viewModel.quickPorts, id: \.self) { port in
                     Button {
@@ -97,9 +159,25 @@ struct ContentView: View {
                     }
                 }
             }
+            
+            Section(header: Text(t(.settings))) {
+                Toggle(t(.launchAtLogin), isOn: $viewModel.launchAtLogin)
+                    .toggleStyle(.switch)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+
+                Text(t(.globalHotkeyHint))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+            }
         }
         .navigationTitle("PortFree")
         .listStyle(.sidebar)
+        .task {
+            await viewModel.scanAllPorts()
+        }
     }
 
     private var headerSection: some View {
@@ -232,6 +310,26 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .tint(.red)
                         .disabled(viewModel.isLoading)
+
+                        Spacer()
+
+                        Button {
+                            viewModel.copyProcessInfo()
+                            showCopiedToast = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                showCopiedToast = false
+                            }
+                        } label: {
+                            Label(t(.copyInfo), systemImage: "doc.on.doc")
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    if showCopiedToast {
+                        Label(t(.copiedToClipboard), systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                            .transition(.opacity)
                     }
                 } else {
                     Label(t(.noProcessDetected), systemImage: "checkmark.circle.fill")

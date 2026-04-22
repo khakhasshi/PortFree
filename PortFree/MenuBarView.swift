@@ -164,6 +164,19 @@ struct MenuBarView: View {
 
     private var footerActions: some View {
         VStack(alignment: .leading, spacing: 8) {
+            Toggle(t(.launchAtLogin), isOn: $viewModel.launchAtLogin)
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .font(.subheadline)
+
+            if !viewModel.allListeningPorts.isEmpty {
+                Text(t(.portCount, languageSettings.plainNumber(viewModel.allListeningPorts.count)))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Divider()
+
             Button(t(.openMainWindow)) {
                 openWindow(id: "main")
             }

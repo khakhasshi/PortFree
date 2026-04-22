@@ -130,6 +130,17 @@ enum AppTextKey: String {
     case historyActionInspect
     case historyActionTerminate
     case historyActionForceTerminate
+    case allListeningPorts
+    case scanAllPorts
+    case scanning
+    case noListeningPorts
+    case portCount
+    case launchAtLogin
+    case copyInfo
+    case copiedToClipboard
+    case globalHotkeyHint
+    case adminRequired
+    case settings
 }
 
 @MainActor
@@ -347,7 +358,18 @@ enum AppTranslations {
             "historyStatusFailed": "failed",
             "historyActionInspect": "Inspect",
             "historyActionTerminate": "End",
-            "historyActionForceTerminate": "Force End"
+            "historyActionForceTerminate": "Force End",
+            "allListeningPorts": "All Listening Ports",
+            "scanAllPorts": "Scan All Ports",
+            "scanning": "Scanning…",
+            "noListeningPorts": "No listening ports detected",
+            "portCount": "%@ ports listening",
+            "launchAtLogin": "Launch at Login",
+            "copyInfo": "Copy Info",
+            "copiedToClipboard": "Copied to clipboard",
+            "globalHotkeyHint": "Press ⌘⇧P anywhere to open PortFree",
+            "adminRequired": "Admin privileges required",
+            "settings": "Settings"
         ],
         .simplifiedChinese: [
             "language": "语言",
@@ -409,7 +431,18 @@ enum AppTranslations {
             "historyStatusFailed": "failed",
             "historyActionInspect": "查询",
             "historyActionTerminate": "结束",
-            "historyActionForceTerminate": "强制结束"
+            "historyActionForceTerminate": "强制结束",
+            "allListeningPorts": "全部监听端口",
+            "scanAllPorts": "扫描全部端口",
+            "scanning": "扫描中…",
+            "noListeningPorts": "未检测到监听中的端口",
+            "portCount": "%@ 个端口正在监听",
+            "launchAtLogin": "开机自启动",
+            "copyInfo": "复制信息",
+            "copiedToClipboard": "已复制到剪贴板",
+            "globalHotkeyHint": "在任意位置按 ⌘⇧P 唤出 PortFree",
+            "adminRequired": "需要管理员权限",
+            "settings": "设置"
         ],
         .traditionalChinese: [
             "language": "語言",
@@ -471,7 +504,18 @@ enum AppTranslations {
             "historyStatusFailed": "failed",
             "historyActionInspect": "查詢",
             "historyActionTerminate": "結束",
-            "historyActionForceTerminate": "強制結束"
+            "historyActionForceTerminate": "強制結束",
+            "allListeningPorts": "全部監聽連接埠",
+            "scanAllPorts": "掃描全部連接埠",
+            "scanning": "掃描中…",
+            "noListeningPorts": "未偵測到監聽中的連接埠",
+            "portCount": "%@ 個連接埠正在監聽",
+            "launchAtLogin": "開機自啟動",
+            "copyInfo": "複製資訊",
+            "copiedToClipboard": "已複製到剪貼簿",
+            "globalHotkeyHint": "在任意位置按 ⌘⇧P 呼出 PortFree",
+            "adminRequired": "需要管理員權限",
+            "settings": "設定"
         ],
         .japanese: [
             "language": "言語",
@@ -533,7 +577,18 @@ enum AppTranslations {
             "historyStatusFailed": "failed",
             "historyActionInspect": "確認",
             "historyActionTerminate": "終了",
-            "historyActionForceTerminate": "強制終了"
+            "historyActionForceTerminate": "強制終了",
+            "allListeningPorts": "すべての待ち受けポート",
+            "scanAllPorts": "全ポートをスキャン",
+            "scanning": "スキャン中…",
+            "noListeningPorts": "待ち受け中のポートは見つかりませんでした",
+            "portCount": "%@ ポートが待ち受け中",
+            "launchAtLogin": "ログイン時に起動",
+            "copyInfo": "コピー",
+            "copiedToClipboard": "クリップボードにコピーしました",
+            "globalHotkeyHint": "どこからでも ⌘⇧P で PortFree を呼び出せます",
+            "adminRequired": "管理者権限が必要です",
+            "settings": "設定"
         ],
         .german: [
             "language": "Sprache",
@@ -595,7 +650,18 @@ enum AppTranslations {
             "historyStatusFailed": "failed",
             "historyActionInspect": "Prüfen",
             "historyActionTerminate": "Beenden",
-            "historyActionForceTerminate": "Erzwungen beenden"
+            "historyActionForceTerminate": "Erzwungen beenden",
+            "allListeningPorts": "Alle lauschenden Ports",
+            "scanAllPorts": "Alle Ports scannen",
+            "scanning": "Wird gescannt…",
+            "noListeningPorts": "Keine lauschenden Ports gefunden",
+            "portCount": "%@ Ports lauschen",
+            "launchAtLogin": "Beim Anmelden starten",
+            "copyInfo": "Kopieren",
+            "copiedToClipboard": "In Zwischenablage kopiert",
+            "globalHotkeyHint": "⌘⇧P drücken, um PortFree von überall zu öffnen",
+            "adminRequired": "Administratorrechte erforderlich",
+            "settings": "Einstellungen"
         ],
         .french: [
             "language": "Langue",
@@ -657,7 +723,18 @@ enum AppTranslations {
             "historyStatusFailed": "failed",
             "historyActionInspect": "Vérifier",
             "historyActionTerminate": "Arrêter",
-            "historyActionForceTerminate": "Forcer l'arrêt"
+            "historyActionForceTerminate": "Forcer l'arrêt",
+            "allListeningPorts": "Tous les ports en écoute",
+            "scanAllPorts": "Scanner tous les ports",
+            "scanning": "Scan en cours…",
+            "noListeningPorts": "Aucun port en écoute détecté",
+            "portCount": "%@ ports en écoute",
+            "launchAtLogin": "Lancer au démarrage",
+            "copyInfo": "Copier",
+            "copiedToClipboard": "Copié dans le presse-papiers",
+            "globalHotkeyHint": "Appuyez sur ⌘⇧P depuis n'importe où pour ouvrir PortFree",
+            "adminRequired": "Privilèges administrateur requis",
+            "settings": "Réglages"
         ],
         .spanish: [
             "language": "Idioma",
@@ -719,7 +796,18 @@ enum AppTranslations {
             "historyStatusFailed": "failed",
             "historyActionInspect": "Inspección",
             "historyActionTerminate": "Finalizar",
-            "historyActionForceTerminate": "Forzar cierre"
+            "historyActionForceTerminate": "Forzar cierre",
+            "allListeningPorts": "Todos los puertos en escucha",
+            "scanAllPorts": "Escanear todos los puertos",
+            "scanning": "Escaneando…",
+            "noListeningPorts": "No se detectaron puertos en escucha",
+            "portCount": "%@ puertos en escucha",
+            "launchAtLogin": "Iniciar al arrancar",
+            "copyInfo": "Copiar",
+            "copiedToClipboard": "Copiado al portapapeles",
+            "globalHotkeyHint": "Pulsa ⌘⇧P en cualquier lugar para abrir PortFree",
+            "adminRequired": "Se requieren privilegios de administrador",
+            "settings": "Ajustes"
         ]
     ]
 }
