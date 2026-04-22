@@ -10,7 +10,7 @@ A native macOS developer tool for inspecting occupied ports, ending stuck proces
 	<img alt="macOS" src="https://img.shields.io/badge/macOS-14%2B-111827?style=flat-square">
 	<img alt="Swift" src="https://img.shields.io/badge/Swift-6-orange?style=flat-square">
 	<img alt="Native UI" src="https://img.shields.io/badge/Native-SwiftUI%20%2B%20AppKit-0ea5e9?style=flat-square">
-	<img alt="License" src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square">
+	<img alt="License" src="https://img.shields.io/badge/License-Apache%202.0-16a34a?style=flat-square">
 </p>
 
 [Features](#features) · [Screenshots](#screenshots) · [Install](#install) · [CLI](#cli) · [中文简介](#中文简介)
@@ -165,5 +165,5 @@ PortFree 是一款原生 macOS 开发者工具，用来快速查看端口占用�
 
 ## License
 
-MIT
+Apache License 2.0 — see [LICENSE](LICENSE) for details.
 
