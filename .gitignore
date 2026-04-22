@@ -27,7 +27,11 @@ xcuserdata/
 # VS Code
 .vscode/
 
+# Internal docs
+DEVELOPMENT_PLAN.md
 MARKETING.md
+SCREENSHOT_GUIDE.md
+RELEASE_NOTES.md
 
 # IDE
 *.idea/
