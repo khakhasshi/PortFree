@@ -17,9 +17,16 @@ struct PortFreeApp: App {
                 .environmentObject(viewModel)
         }
 
-        MenuBarExtra("PortFree", systemImage: "bolt.circle") {
+        MenuBarExtra {
             MenuBarView()
                 .environmentObject(viewModel)
+        } label: {
+            Image("iconbar")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .accessibilityLabel("PortFree")
         }
         .menuBarExtraStyle(.window)
     }
