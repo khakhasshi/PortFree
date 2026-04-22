@@ -56,8 +56,12 @@ struct ContentView: View {
                             Image(systemName: "bolt.fill")
                                 .foregroundStyle(.secondary)
                         }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
+                    .modifier(SidebarRowHoverEffect())
                 }
             }
 
@@ -81,9 +85,13 @@ struct ContentView: View {
                                     .font(.caption)
                                     .foregroundStyle(.tertiary)
                             }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
                         .buttonStyle(.plain)
+                        .modifier(SidebarRowHoverEffect())
                     }
                     .onDelete { offsets in
                         viewModel.deleteRecentItems(offsets: offsets)
@@ -152,6 +160,7 @@ struct ContentView: View {
         }
         .padding(20)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .modifier(HoverCardEffect())
     }
 
     private var quickActionStrip: some View {
@@ -165,8 +174,10 @@ struct ContentView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
+                    .modifier(HoverLiftEffect())
                 }
             }
+            .padding(.vertical, 4)
         }
     }
 
@@ -224,6 +235,7 @@ struct ContentView: View {
             }
             .padding(20)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .modifier(HoverCardEffect())
         } else {
             ContentUnavailableView(
                 "尚未检查端口",
@@ -232,6 +244,7 @@ struct ContentView: View {
             )
             .frame(maxWidth: .infinity, minHeight: 280)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .modifier(HoverCardEffect())
         }
     }
 
@@ -247,6 +260,7 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
         .padding(16)
         .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .modifier(HoverCardEffect(cornerRadius: 16, baseOpacity: 0.04, hoverOpacity: 0.08, yOffset: -2))
     }
 
     private func statusBadge(for result: PortInspectionResult) -> some View {
@@ -256,6 +270,70 @@ struct ContentView: View {
             .padding(.vertical, 6)
             .background((result.isOccupied ? Color.orange : Color.green).opacity(0.14), in: Capsule())
             .foregroundStyle(result.isOccupied ? .orange : .green)
+    }
+}
+
+private struct HoverCardEffect: ViewModifier {
+    let cornerRadius: CGFloat
+    let baseOpacity: Double
+    let hoverOpacity: Double
+    let yOffset: CGFloat
+
+    @State private var isHovering = false
+
+    init(cornerRadius: CGFloat = 18, baseOpacity: Double = 0.05, hoverOpacity: Double = 0.1, yOffset: CGFloat = -3) {
+        self.cornerRadius = cornerRadius
+        self.baseOpacity = baseOpacity
+        self.hoverOpacity = hoverOpacity
+        self.yOffset = yOffset
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(isHovering ? hoverOpacity : baseOpacity), lineWidth: 1)
+            }
+            .scaleEffect(isHovering ? 1.006 : 1)
+            .offset(y: isHovering ? yOffset : 0)
+            .animation(.easeOut(duration: 0.16), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+    }
+}
+
+private struct HoverLiftEffect: ViewModifier {
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isHovering ? 1.04 : 1)
+            .animation(.easeOut(duration: 0.14), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+    }
+}
+
+private struct SidebarRowHoverEffect: ViewModifier {
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.primary.opacity(isHovering ? 0.08 : 0.0001))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(isHovering ? 0.08 : 0), lineWidth: 1)
+            }
+            .offset(x: isHovering ? 2 : 0)
+            .animation(.easeOut(duration: 0.14), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
     }
 }
 

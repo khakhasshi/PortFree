@@ -47,6 +47,7 @@ struct MenuBarView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.isLoading)
+            .modifier(MenuHoverLiftEffect())
         }
     }
 
@@ -63,6 +64,7 @@ struct MenuBarView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .modifier(MenuHoverLiftEffect())
                 }
             }
         }
@@ -111,6 +113,7 @@ struct MenuBarView: View {
             }
             .padding(12)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .modifier(MenuHoverCardEffect())
         }
     }
 
@@ -140,8 +143,12 @@ struct MenuBarView: View {
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
                     }
                     .buttonStyle(.plain)
+                    .background(Color.primary.opacity(0.0001), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .modifier(MenuHoverCardEffect(cornerRadius: 10, baseOpacity: 0.03, hoverOpacity: 0.08, scale: 1.01))
                 }
             }
         }
@@ -153,12 +160,62 @@ struct MenuBarView: View {
                 openWindow(id: "main")
             }
             .buttonStyle(.plain)
+            .modifier(MenuHoverLiftEffect(scale: 1.015))
 
             Button("退出 PortFree") {
                 NSApp.terminate(nil)
             }
             .buttonStyle(.plain)
+            .modifier(MenuHoverLiftEffect(scale: 1.015))
         }
         .font(.subheadline)
+    }
+}
+
+private struct MenuHoverCardEffect: ViewModifier {
+    let cornerRadius: CGFloat
+    let baseOpacity: Double
+    let hoverOpacity: Double
+    let scale: CGFloat
+
+    @State private var isHovering = false
+
+    init(cornerRadius: CGFloat = 12, baseOpacity: Double = 0.04, hoverOpacity: Double = 0.09, scale: CGFloat = 1.015) {
+        self.cornerRadius = cornerRadius
+        self.baseOpacity = baseOpacity
+        self.hoverOpacity = hoverOpacity
+        self.scale = scale
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(isHovering ? hoverOpacity : baseOpacity), lineWidth: 1)
+            }
+            .scaleEffect(isHovering ? scale : 1)
+            .animation(.easeOut(duration: 0.14), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
+    }
+}
+
+private struct MenuHoverLiftEffect: ViewModifier {
+    let scale: CGFloat
+
+    @State private var isHovering = false
+
+    init(scale: CGFloat = 1.03) {
+        self.scale = scale
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isHovering ? scale : 1)
+            .animation(.easeOut(duration: 0.12), value: isHovering)
+            .onHover { hovering in
+                isHovering = hovering
+            }
     }
 }

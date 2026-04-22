@@ -155,7 +155,7 @@ struct PortInspectionResult: Sendable {
     let command: String
     let endpoint: String
 
-    static func free(port: Int) -> PortInspectionResult {
+    nonisolated static func free(port: Int) -> PortInspectionResult {
         PortInspectionResult(
             port: port,
             isOccupied: false,
@@ -174,7 +174,7 @@ enum PortInspector {
         case commandFailed(String)
         case invalidResponse
 
-        var errorDescription: String? {
+        nonisolated var errorDescription: String? {
             switch self {
             case let .commandFailed(message):
                 return message.isEmpty ? "命令执行失败" : message
@@ -184,7 +184,7 @@ enum PortInspector {
         }
     }
 
-    static func inspect(port: Int) throws -> PortInspectionResult {
+    nonisolated static func inspect(port: Int) throws -> PortInspectionResult {
         let output = try runCommand(
             launchPath: "/usr/sbin/lsof",
             arguments: ["-nP", "-iTCP:\(port)", "-sTCP:LISTEN"]
@@ -223,7 +223,7 @@ enum PortInspector {
         )
     }
 
-    static func killProcess(pid: Int, force: Bool) throws {
+    nonisolated static func killProcess(pid: Int, force: Bool) throws {
         var arguments = [String]()
         if force {
             arguments.append("-9")
@@ -234,7 +234,7 @@ enum PortInspector {
     }
 
     @discardableResult
-    private static func runCommand(launchPath: String, arguments: [String]) throws -> String {
+    nonisolated private static func runCommand(launchPath: String, arguments: [String]) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: launchPath)
         process.arguments = arguments
