@@ -151,11 +151,9 @@ final class PortManagerViewModel: ObservableObject {
                 currentResult = nil
             }
         } catch {
-            // If normal kill fails (e.g. Permission Denied), try with admin privileges
+            // If normal kill fails (e.g. Permission Denied), try with admin privileges on main thread
             do {
-                try await Task.detached(priority: .userInitiated) {
-                    try PortInspector.killProcessWithAdmin(pid: result.pid, force: force)
-                }.value
+                try PortInspector.killProcessWithAdmin(pid: result.pid, force: force)
 
                 statusState = force ? .forceEnded(port: result.port) : .ended(port: result.port)
                 insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "success")
@@ -410,6 +408,10 @@ enum PortInspector {
     }
 
     nonisolated static func killProcessWithAdmin(pid: Int, force: Bool) throws {
+        // pid is already validated as Int, safe from injection
+        guard pid > 0 else {
+            throw PortInspectorError.commandFailed("Invalid PID")
+        }
         let killCmd = force ? "kill -9 \(pid)" : "kill \(pid)"
         let script = "do shell script \"\(killCmd)\" with administrator privileges"
         var errorInfo: NSDictionary?
@@ -490,11 +492,31 @@ enum PortInspector {
         process.standardOutput = outputPipe
         process.standardError = errorPipe
 
+        // Read pipe data asynchronously to prevent deadlock when the pipe
+        // buffer fills before the process exits.
+        var outputData = Data()
+        var errorData = Data()
+        let outputHandle = outputPipe.fileHandleForReading
+        let errorHandle = errorPipe.fileHandleForReading
+
+        let group = DispatchGroup()
+
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            outputData = outputHandle.readDataToEndOfFile()
+            group.leave()
+        }
+
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            errorData = errorHandle.readDataToEndOfFile()
+            group.leave()
+        }
+
         try process.run()
         process.waitUntilExit()
+        group.wait()
 
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(decoding: outputData, as: UTF8.self)
         let errorOutput = String(decoding: errorData, as: UTF8.self)
 
