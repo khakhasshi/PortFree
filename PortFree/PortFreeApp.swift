@@ -10,17 +10,28 @@ import SwiftUI
 
 @main
 struct PortFreeApp: App {
-    @StateObject private var viewModel = PortManagerViewModel()
+    @StateObject private var languageSettings: AppLanguageSettings
+    @StateObject private var viewModel: PortManagerViewModel
+
+    init() {
+        let languageSettings = AppLanguageSettings()
+        _languageSettings = StateObject(wrappedValue: languageSettings)
+        _viewModel = StateObject(wrappedValue: PortManagerViewModel(languageSettings: languageSettings))
+    }
 
     var body: some Scene {
         WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(viewModel)
+                .environmentObject(languageSettings)
+                .environment(\.locale, Locale(identifier: languageSettings.currentLanguage.localeIdentifier))
         }
 
         MenuBarExtra {
             MenuBarView()
                 .environmentObject(viewModel)
+                .environmentObject(languageSettings)
+                .environment(\.locale, Locale(identifier: languageSettings.currentLanguage.localeIdentifier))
         } label: {
             Image(nsImage: Self.menuBarIcon)
                 .accessibilityLabel("PortFree")

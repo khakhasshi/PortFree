@@ -4,15 +4,65 @@ import SwiftUI
 
 @MainActor
 final class PortManagerViewModel: ObservableObject {
+    private let languageSettings: AppLanguageSettings
+
     @Published var portInput = ""
     @Published var items: [Item] = []
     @Published var currentResult: PortInspectionResult?
-    @Published var statusMessage = "输入端口号后开始检查"
-    @Published var errorMessage: String?
     @Published var isLoading = false
     @Published var showingForceKillConfirmation = false
 
+    @Published private var statusState: StatusState = .prompt
+    @Published private var errorState: ErrorState?
+
     let quickPorts = [3000, 5173, 8000, 8080, 8081, 9000]
+
+    init(languageSettings: AppLanguageSettings) {
+        self.languageSettings = languageSettings
+    }
+
+    var statusMessage: String {
+        switch statusState {
+        case .prompt:
+            return languageSettings.text(.appDescription)
+        case let .foundProcess(processName, pid):
+            return languageSettings.text(.foundProcess, [processName, pid])
+        case let .portFree(port):
+            return languageSettings.text(.portFreeStatus, [languageSettings.plainNumber(port)])
+        case .inspectFailed:
+            return languageSettings.text(.inspectFailed)
+        case let .ended(port):
+            return languageSettings.text(.processEndedSuccess, [languageSettings.plainNumber(port)])
+        case let .forceEnded(port):
+            return languageSettings.text(.processForceEndedSuccess, [languageSettings.plainNumber(port)])
+        case .endFailed:
+            return languageSettings.text(.processEndedFailed)
+        case .forceEndFailed:
+            return languageSettings.text(.processForceEndedFailed)
+        }
+    }
+
+    var errorMessage: String? {
+        guard let errorState else {
+            return nil
+        }
+
+        switch errorState {
+        case .enterPortFirst:
+            return languageSettings.text(.enterPortFirst)
+        case .invalidPortRange:
+            return languageSettings.text(.invalidPortRange)
+        case let .inspectorError(inspectorError):
+            switch inspectorError {
+            case let .commandFailed(message):
+                return message.isEmpty ? languageSettings.text(.commandFailed) : message
+            case .invalidResponse:
+                return languageSettings.text(.invalidPortInfo)
+            }
+        case let .generic(message):
+            return message
+        }
+    }
 
     func fillPortAndCheck(_ port: Int) {
         portInput = String(port)
@@ -22,7 +72,7 @@ final class PortManagerViewModel: ObservableObject {
     }
 
     func inspectCurrentPort() async {
-        errorMessage = nil
+        errorState = nil
 
         guard let port = validatedPort() else {
             currentResult = nil
@@ -38,13 +88,13 @@ final class PortManagerViewModel: ObservableObject {
             }.value
 
             currentResult = result
-            statusMessage = result.isOccupied ? "发现占用进程：\(result.processName) (PID \(result.pid))" : "端口 \(port) 当前空闲"
-            insertHistory(port: port, result: result, actionType: "查询", status: result.isOccupied ? "occupied" : "free")
+            statusState = result.isOccupied ? .foundProcess(processName: result.processName, pid: result.pid) : .portFree(port: port)
+            insertHistory(port: port, result: result, actionType: "inspect", status: result.isOccupied ? "occupied" : "free")
         } catch {
             currentResult = nil
-            errorMessage = readableError(error)
-            statusMessage = "检查失败"
-            insertHistory(port: port, result: nil, actionType: "查询", status: "failed")
+            errorState = readableErrorState(error)
+            statusState = .inspectFailed
+            insertHistory(port: port, result: nil, actionType: "inspect", status: "failed")
         }
     }
 
@@ -55,7 +105,7 @@ final class PortManagerViewModel: ObservableObject {
     func killCurrentProcess(force: Bool) async {
         guard let result = currentResult, result.isOccupied else { return }
 
-        errorMessage = nil
+        errorState = nil
         isLoading = true
         defer { isLoading = false }
 
@@ -64,9 +114,8 @@ final class PortManagerViewModel: ObservableObject {
                 try PortInspector.killProcess(pid: result.pid, force: force)
             }.value
 
-            let actionTitle = force ? "强制结束" : "结束"
-            statusMessage = "已成功\(actionTitle)进程并释放端口 \(result.port)"
-            insertHistory(port: result.port, result: result, actionType: force ? "强制结束" : "结束", status: "success")
+            statusState = force ? .forceEnded(port: result.port) : .ended(port: result.port)
+            insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "success")
 
             do {
                 let refreshed = try await Task.detached(priority: .userInitiated) {
@@ -77,9 +126,9 @@ final class PortManagerViewModel: ObservableObject {
                 currentResult = nil
             }
         } catch {
-            errorMessage = readableError(error)
-            statusMessage = force ? "强制结束失败" : "结束失败"
-            insertHistory(port: result.port, result: result, actionType: force ? "强制结束" : "结束", status: "failed")
+            errorState = readableErrorState(error)
+            statusState = force ? .forceEndFailed : .endFailed
+            insertHistory(port: result.port, result: result, actionType: force ? "forceTerminate" : "terminate", status: "failed")
         }
     }
 
@@ -100,33 +149,35 @@ final class PortManagerViewModel: ObservableObject {
 
     var forceKillMessage: String {
         guard let result = currentResult else {
-            return "将执行 kill -9。"
+            return languageSettings.text(.forceKillMessageDefault)
         }
-        return "将对 \(result.processName) (PID \(result.pid)) 执行 kill -9。"
+        return languageSettings.text(.forceKillMessageDetail, [result.processName, result.pid])
     }
 
     func historySubtitle(for item: Item) -> String {
-        let processPart = item.processName == "-" ? "无进程信息" : item.processName
+        let processPart = item.processName == "-" ? languageSettings.text(.noProcessInfo) : item.processName
         let pidPart = item.pid.map { "PID \($0)" } ?? "PID -"
-        return "\(processPart) · \(pidPart) · \(item.resultStatus)"
+        return "\(processPart) · \(pidPart) · \(languageSettings.historyStatusTitle(item.resultStatus))"
     }
 
-    func readableError(_ error: Error) -> String {
-        if let inspectorError = error as? PortInspector.PortInspectorError {
-            return inspectorError.errorDescription ?? "未知错误"
-        }
-
-        return error.localizedDescription
+    func historyActionTitle(for item: Item) -> String {
+        languageSettings.historyActionTitle(item.actionType)
     }
 
     private func validatedPort() -> Int? {
-        guard !portInput.isEmpty else {
-            errorMessage = "请输入端口号"
+        let normalizedInput = normalizedPortInput(from: portInput)
+
+        guard !normalizedInput.isEmpty else {
+            errorState = .enterPortFirst
             return nil
         }
 
-        guard let port = Int(portInput), (1...65535).contains(port) else {
-            errorMessage = "端口号必须是 1 到 65535 之间的数字"
+        if normalizedInput != portInput {
+            portInput = normalizedInput
+        }
+
+        guard let port = Int(normalizedInput), (1...65535).contains(port) else {
+            errorState = .invalidPortRange
             return nil
         }
 
@@ -142,6 +193,43 @@ final class PortManagerViewModel: ObservableObject {
             resultStatus: status
         )
         items.insert(item, at: 0)
+    }
+
+    private func readableErrorState(_ error: Error) -> ErrorState {
+        if let inspectorError = error as? PortInspector.PortInspectorError {
+            return .inspectorError(inspectorError)
+        }
+
+        let description = error.localizedDescription
+        return description.isEmpty ? .generic(languageSettings.text(.unknownError)) : .generic(description)
+    }
+
+    private func normalizedPortInput(from value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: "，", with: "")
+            .replacingOccurrences(of: " ", with: "")
+    }
+}
+
+private extension PortManagerViewModel {
+    enum StatusState {
+        case prompt
+        case foundProcess(processName: String, pid: Int)
+        case portFree(port: Int)
+        case inspectFailed
+        case ended(port: Int)
+        case forceEnded(port: Int)
+        case endFailed
+        case forceEndFailed
+    }
+
+    enum ErrorState {
+        case enterPortFirst
+        case invalidPortRange
+        case inspectorError(PortInspector.PortInspectorError)
+        case generic(String)
     }
 }
 

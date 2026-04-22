@@ -9,8 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var viewModel: PortManagerViewModel
-
-    private let timestampFormatter = Item.timestampFormatter
+    @EnvironmentObject private var languageSettings: AppLanguageSettings
 
     var body: some View {
         NavigationSplitView {
@@ -28,16 +27,16 @@ struct ContentView: View {
                 .frame(maxWidth: 760, alignment: .leading)
             }
             .background(Color.clear)
-            .navigationTitle("端口管理")
+            .navigationTitle(t(.portManagement))
         }
         .frame(minWidth: 960, minHeight: 620)
-        .confirmationDialog("确认强制结束该进程？", isPresented: $viewModel.showingForceKillConfirmation, titleVisibility: .visible) {
-            Button("强制结束", role: .destructive) {
+        .confirmationDialog(t(.forceKillConfirmTitle), isPresented: $viewModel.showingForceKillConfirmation, titleVisibility: .visible) {
+            Button(t(.forceKillConfirmButton), role: .destructive) {
                 Task {
                     await viewModel.killCurrentProcess(force: true)
                 }
             }
-            Button("取消", role: .cancel) { }
+            Button(t(.cancel), role: .cancel) { }
         } message: {
             Text(viewModel.forceKillMessage)
         }
@@ -45,13 +44,13 @@ struct ContentView: View {
 
     private var sidebar: some View {
         List {
-            Section(header: Text("常用端口")) {
+            Section(header: Text(t(.commonPorts))) {
                 ForEach(viewModel.quickPorts, id: \.self) { port in
                     Button {
                         viewModel.fillPortAndCheck(port)
                     } label: {
                         HStack {
-                            Text("端口 \(port)")
+                            Text(t(.portWithNumber, languageSettings.plainNumber(port)))
                             Spacer()
                             Image(systemName: "bolt.fill")
                                 .foregroundStyle(.secondary)
@@ -65,9 +64,9 @@ struct ContentView: View {
                 }
             }
 
-            Section(header: Text("最近记录")) {
+            Section(header: Text(t(.recentHistory))) {
                 if viewModel.items.isEmpty {
-                    Text("还没有操作记录")
+                    Text(t(.noHistory))
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(viewModel.recentItems(limit: 12)) { item in
@@ -75,13 +74,13 @@ struct ContentView: View {
                             viewModel.fillPortAndCheck(item.port)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("\(item.actionType) · 端口 \(item.port)")
+                                Text("\(viewModel.historyActionTitle(for: item)) · \(t(.portWithNumber, languageSettings.plainNumber(item.port)))")
                                     .font(.headline)
                                     .foregroundStyle(.primary)
                                 Text(viewModel.historySubtitle(for: item))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                Text(timestampFormatter.string(from: item.timestamp))
+                                Text(languageSettings.formattedDate(item.timestamp))
                                     .font(.caption)
                                     .foregroundStyle(.tertiary)
                             }
@@ -104,19 +103,25 @@ struct ContentView: View {
     }
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("快速释放被占用端口")
-                .font(.largeTitle)
-                .fontWeight(.semibold)
-            Text("输入端口号后检查占用进程，并可执行普通结束或强制结束。")
-                .foregroundStyle(.secondary)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(t(.releaseOccupiedPort))
+                    .font(.largeTitle)
+                    .fontWeight(.semibold)
+                Text(t(.releaseOccupiedPortSubtitle))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            LanguageMenuButton()
         }
     }
 
     private var portInputSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("检查端口")
+                Text(t(.inspectPort))
                     .font(.headline)
                 Spacer()
                 if let currentResult = viewModel.currentResult {
@@ -125,7 +130,7 @@ struct ContentView: View {
             }
 
             HStack(spacing: 12) {
-                TextField("例如 3000、8080、5173", text: $viewModel.portInput)
+                TextField(t(.portPlaceholder), text: $viewModel.portInput)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 240)
                     .onSubmit {
@@ -134,7 +139,7 @@ struct ContentView: View {
                         }
                     }
 
-                Button("检查端口") {
+                Button(t(.inspectPortButton)) {
                     Task {
                         await viewModel.inspectCurrentPort()
                     }
@@ -187,10 +192,10 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("端口 \(result.port)")
+                        Text(t(.portWithNumber, languageSettings.plainNumber(result.port)))
                             .font(.title2)
                             .fontWeight(.medium)
-                        Text(result.isOccupied ? "当前已被占用" : "当前空闲")
+                        Text(result.isOccupied ? t(.currentlyOccupied) : t(.currentlyFree))
                             .foregroundStyle(result.isOccupied ? .orange : .green)
                     }
 
@@ -204,16 +209,16 @@ struct ContentView: View {
 
                 if result.isOccupied {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 16)], spacing: 16) {
-                        detailCard(title: "进程", value: result.processName)
-                        detailCard(title: "PID", value: String(result.pid))
-                        detailCard(title: "用户", value: result.user)
-                        detailCard(title: "协议", value: result.protocolName)
-                        detailCard(title: "端口描述", value: result.endpoint)
-                        detailCard(title: "命令", value: result.command)
+                        detailCard(title: t(.process), value: result.processName)
+                        detailCard(title: t(.pid), value: String(result.pid))
+                        detailCard(title: t(.user), value: result.user)
+                        detailCard(title: t(.protocol), value: result.protocolName)
+                        detailCard(title: t(.endpoint), value: result.endpoint)
+                        detailCard(title: t(.command), value: result.command)
                     }
 
                     HStack(spacing: 12) {
-                        Button("结束进程") {
+                        Button(t(.endProcess)) {
                             Task {
                                 await viewModel.killCurrentProcess(force: false)
                             }
@@ -221,7 +226,7 @@ struct ContentView: View {
                         .buttonStyle(.borderedProminent)
                         .disabled(viewModel.isLoading)
 
-                        Button("强制结束") {
+                        Button(t(.forceEnd)) {
                             viewModel.showingForceKillConfirmation = true
                         }
                         .buttonStyle(.bordered)
@@ -229,7 +234,7 @@ struct ContentView: View {
                         .disabled(viewModel.isLoading)
                     }
                 } else {
-                    Label("该端口当前未发现占用进程", systemImage: "checkmark.circle.fill")
+                    Label(t(.noProcessDetected), systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                 }
             }
@@ -238,9 +243,9 @@ struct ContentView: View {
             .modifier(HoverCardEffect())
         } else {
             ContentUnavailableView(
-                "尚未检查端口",
+                t(.notCheckedYet),
                 systemImage: "point.3.connected.trianglepath.dotted",
-                description: Text("输入端口号，或点击上方快捷端口快速开始。")
+                description: Text(t(.notCheckedYetDescription))
             )
             .frame(maxWidth: .infinity, minHeight: 280)
             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -264,12 +269,16 @@ struct ContentView: View {
     }
 
     private func statusBadge(for result: PortInspectionResult) -> some View {
-        Text(result.isOccupied ? "Occupied" : "Available")
+        Text(result.isOccupied ? t(.occupied) : t(.available))
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background((result.isOccupied ? Color.orange : Color.green).opacity(0.14), in: Capsule())
             .foregroundStyle(result.isOccupied ? .orange : .green)
+    }
+
+    private func t(_ key: AppTextKey, _ arguments: CVarArg...) -> String {
+        languageSettings.text(key, arguments)
     }
 }
 
@@ -338,8 +347,12 @@ private struct SidebarRowHoverEffect: ViewModifier {
 }
 
 struct ContentView_Previews: PreviewProvider {
+    @MainActor
+    private static let previewLanguageSettings = AppLanguageSettings()
+
     static var previews: some View {
         ContentView()
-            .environmentObject(PortManagerViewModel())
+            .environmentObject(PortManagerViewModel(languageSettings: previewLanguageSettings))
+            .environmentObject(previewLanguageSettings)
     }
 }
