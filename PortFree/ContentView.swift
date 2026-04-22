@@ -5,7 +5,6 @@
 //  Created by JIANGJINGZHE on 22/4/2026.
 //
 
-import AppKit
 import Foundation
 import SwiftUI
 
@@ -16,40 +15,39 @@ struct ContentView: View {
     @State private var statusMessage = "输入端口号后开始检查"
     @State private var errorMessage: String?
     @State private var isLoading = false
-    @State private var showingForceKillAlert = false
+    @State private var showingForceKillConfirmation = false
 
     private let quickPorts = [3000, 5173, 8000, 8080, 8081, 9000]
     private let timestampFormatter = Item.timestampFormatter
 
     var body: some View {
-        HStack(spacing: 0) {
+        NavigationSplitView {
             sidebar
-                .frame(width: 260)
-
-            Divider()
-
+                .navigationSplitViewColumnWidth(min: 250, ideal: 280)
+        } detail: {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     headerSection
                     portInputSection
+                    quickActionStrip
                     resultSection
                 }
                 .padding(24)
                 .frame(maxWidth: 760, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.clear)
+            .navigationTitle("端口管理")
         }
         .frame(minWidth: 960, minHeight: 620)
-        .background(Color.white.opacity(0.001))
-        .alert(isPresented: $showingForceKillAlert) {
-            Alert(
-                title: Text("确认强制结束该进程？"),
-                message: Text(forceKillMessage),
-                primaryButton: .destructive(Text("强制结束")) {
-                    killCurrentProcess(force: true)
-                },
-                secondaryButton: .cancel(Text("取消"))
-            )
+        .confirmationDialog("确认强制结束该进程？", isPresented: $showingForceKillConfirmation, titleVisibility: .visible) {
+            Button("强制结束", role: .destructive) {
+                Task {
+                    await killCurrentProcess(force: true)
+                }
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text(forceKillMessage)
         }
     }
 
@@ -64,17 +62,17 @@ struct ContentView: View {
                             Text("端口 \(port)")
                             Spacer()
                             Image(systemName: "bolt.fill")
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.plain)
                 }
             }
 
             Section(header: Text("最近记录")) {
                 if items.isEmpty {
                     Text("还没有操作记录")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 } else {
                     ForEach(Array(items.prefix(12))) { item in
                         Button(action: {
@@ -83,23 +81,24 @@ struct ContentView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("\(item.actionType) · 端口 \(item.port)")
                                     .font(.headline)
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                                 Text(historySubtitle(for: item))
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(timestampFormatter.string(from: item.timestamp))
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.tertiary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .buttonStyle(.plain)
                     }
                     .onDelete(perform: deleteItems)
                 }
             }
         }
-        .listStyle(SidebarListStyle())
+        .navigationTitle("PortFree")
+        .listStyle(.sidebar)
     }
 
     private var headerSection: some View {
@@ -108,23 +107,37 @@ struct ContentView: View {
                 .font(.largeTitle)
                 .fontWeight(.semibold)
             Text("输入端口号后检查占用进程，并可执行普通结束或强制结束。")
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
     }
 
     private var portInputSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("检查端口")
-                .font(.headline)
+            HStack {
+                Text("检查端口")
+                    .font(.headline)
+                Spacer()
+                if let currentResult {
+                    statusBadge(for: currentResult)
+                }
+            }
 
             HStack(spacing: 12) {
-                TextField("例如 3000、8080、5173", text: $portInput, onCommit: inspectCurrentPort)
+                TextField("例如 3000、8080、5173", text: $portInput)
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: 240)
+                    .onSubmit {
+                        Task {
+                            await inspectCurrentPort()
+                        }
+                    }
 
                 Button("检查端口") {
-                    inspectCurrentPort()
+                    Task {
+                        await inspectCurrentPort()
+                    }
                 }
+                .keyboardShortcut(.defaultAction)
                 .disabled(isLoading)
 
                 if isLoading {
@@ -135,19 +148,32 @@ struct ContentView: View {
 
             if let errorMessage {
                 Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
-                    .foregroundColor(.orange)
+                    .foregroundStyle(.orange)
                     .font(.subheadline)
             } else {
                 Text(statusMessage)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
-        )
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var quickActionStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(quickPorts, id: \.self) { port in
+                    Button {
+                        fillPortAndCheck(port)
+                    } label: {
+                        Label("\(port)", systemImage: "bolt.circle")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -160,70 +186,74 @@ struct ContentView: View {
                             .font(.title2)
                             .fontWeight(.medium)
                         Text(result.isOccupied ? "当前已被占用" : "当前空闲")
-                            .foregroundColor(result.isOccupied ? .orange : .green)
+                            .foregroundStyle(result.isOccupied ? .orange : .green)
                     }
 
                     Spacer()
 
                     Label(result.protocolName, systemImage: result.isOccupied ? "network" : "checkmark.circle")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 Divider()
 
                 if result.isOccupied {
-                    detailRow(title: "进程", value: result.processName)
-                    detailRow(title: "PID", value: String(result.pid))
-                    detailRow(title: "用户", value: result.user)
-                    detailRow(title: "命令", value: result.command)
-                    detailRow(title: "端口描述", value: result.endpoint)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 16)], spacing: 16) {
+                        detailCard(title: "进程", value: result.processName)
+                        detailCard(title: "PID", value: String(result.pid))
+                        detailCard(title: "用户", value: result.user)
+                        detailCard(title: "协议", value: result.protocolName)
+                        detailCard(title: "端口描述", value: result.endpoint)
+                        detailCard(title: "命令", value: result.command)
+                    }
 
                     HStack(spacing: 12) {
                         Button("结束进程") {
-                            killCurrentProcess(force: false)
+                            Task {
+                                await killCurrentProcess(force: false)
+                            }
                         }
+                        .buttonStyle(.borderedProminent)
                         .disabled(isLoading)
 
                         Button("强制结束") {
-                            showingForceKillAlert = true
+                            showingForceKillConfirmation = true
                         }
-                        .foregroundColor(.red)
+                        .buttonStyle(.bordered)
+                        .tint(.red)
                         .disabled(isLoading)
                     }
                 } else {
                     Label("该端口当前未发现占用进程", systemImage: "checkmark.circle.fill")
-                        .foregroundColor(.green)
+                        .foregroundStyle(.green)
                 }
             }
             .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
-            )
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         } else {
-            VStack(alignment: .leading, spacing: 10) {
-                Label("尚未检查端口", systemImage: "point.3.connected.trianglepath.dotted")
-                    .font(.title3)
-                Text("输入端口号，或点击左侧常用端口快速开始。")
-                    .foregroundColor(.secondary)
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
+            ContentUnavailableView(
+                "尚未检查端口",
+                systemImage: "point.3.connected.trianglepath.dotted",
+                description: Text("输入端口号，或点击上方快捷端口快速开始。")
             )
+            .frame(maxWidth: .infinity, minHeight: 280)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
     }
 
-    private func detailRow(title: String, value: String) -> some View {
+    private func detailCard(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
             Text(value)
                 .font(.body)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private func deleteItems(offsets: IndexSet) {
@@ -239,10 +269,12 @@ struct ContentView: View {
 
     private func fillPortAndCheck(_ port: Int) {
         portInput = String(port)
-        inspectCurrentPort()
+        Task {
+            await inspectCurrentPort()
+        }
     }
 
-    private func inspectCurrentPort() {
+    private func inspectCurrentPort() async {
         errorMessage = nil
 
         guard let port = validatedPort() else {
@@ -251,51 +283,52 @@ struct ContentView: View {
         }
 
         isLoading = true
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let result = try PortInspector.inspect(port: port)
-                DispatchQueue.main.async {
-                    currentResult = result
-                    statusMessage = result.isOccupied ? "发现占用进程：\(result.processName) (PID \(result.pid))" : "端口 \(port) 当前空闲"
-                    insertHistory(port: port, result: result, actionType: "查询", status: result.isOccupied ? "occupied" : "free")
-                    isLoading = false
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    currentResult = nil
-                    errorMessage = readableError(error)
-                    statusMessage = "检查失败"
-                    insertHistory(port: port, result: nil, actionType: "查询", status: "failed")
-                    isLoading = false
-                }
-            }
+        defer { isLoading = false }
+
+        do {
+            let result = try await Task.detached(priority: .userInitiated) {
+                try PortInspector.inspect(port: port)
+            }.value
+
+            currentResult = result
+            statusMessage = result.isOccupied ? "发现占用进程：\(result.processName) (PID \(result.pid))" : "端口 \(port) 当前空闲"
+            insertHistory(port: port, result: result, actionType: "查询", status: result.isOccupied ? "occupied" : "free")
+        } catch {
+            currentResult = nil
+            errorMessage = readableError(error)
+            statusMessage = "检查失败"
+            insertHistory(port: port, result: nil, actionType: "查询", status: "failed")
         }
     }
 
-    private func killCurrentProcess(force: Bool) {
+    private func killCurrentProcess(force: Bool) async {
         guard let result = currentResult, result.isOccupied else { return }
 
         errorMessage = nil
         isLoading = true
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
+        defer { isLoading = false }
+
+        do {
+            try await Task.detached(priority: .userInitiated) {
                 try PortInspector.killProcess(pid: result.pid, force: force)
-                let refreshed = try? PortInspector.inspect(port: result.port)
-                DispatchQueue.main.async {
-                    let actionTitle = force ? "强制结束" : "结束"
-                    statusMessage = "已成功\(actionTitle)进程并释放端口 \(result.port)"
-                    insertHistory(port: result.port, result: result, actionType: force ? "强制结束" : "结束", status: "success")
-                    currentResult = refreshed
-                    isLoading = false
-                }
+            }.value
+
+            let actionTitle = force ? "强制结束" : "结束"
+            statusMessage = "已成功\(actionTitle)进程并释放端口 \(result.port)"
+            insertHistory(port: result.port, result: result, actionType: force ? "强制结束" : "结束", status: "success")
+
+            do {
+                let refreshed = try await Task.detached(priority: .userInitiated) {
+                    try PortInspector.inspect(port: result.port)
+                }.value
+                currentResult = refreshed
             } catch {
-                DispatchQueue.main.async {
-                    errorMessage = readableError(error)
-                    statusMessage = force ? "强制结束失败" : "结束失败"
-                    insertHistory(port: result.port, result: result, actionType: force ? "强制结束" : "结束", status: "failed")
-                    isLoading = false
-                }
+                currentResult = nil
             }
+        } catch {
+            errorMessage = readableError(error)
+            statusMessage = force ? "强制结束失败" : "结束失败"
+            insertHistory(port: result.port, result: result, actionType: force ? "强制结束" : "结束", status: "failed")
         }
     }
 
@@ -343,6 +376,15 @@ struct ContentView: View {
             return "将执行 kill -9。"
         }
         return "将对 \(result.processName) (PID \(result.pid)) 执行 kill -9。"
+    }
+
+    private func statusBadge(for result: PortInspectionResult) -> some View {
+        Text(result.isOccupied ? "Occupied" : "Available")
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background((result.isOccupied ? Color.orange : Color.green).opacity(0.14), in: Capsule())
+            .foregroundStyle(result.isOccupied ? .orange : .green)
     }
 }
 
