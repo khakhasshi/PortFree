@@ -27,11 +27,23 @@ final class PortManagerViewModel: ObservableObject {
     @Published private var statusState: StatusState = .prompt
     @Published private var errorState: ErrorState?
 
-    let quickPorts = [3000, 5173, 8000, 8080, 8081, 9000]
+    @Published var customQuickPorts: [Int] {
+        didSet {
+            UserDefaults.standard.set(customQuickPorts, forKey: "portfree.customQuickPorts")
+        }
+    }
+
+    let defaultQuickPorts = [3000, 5173, 8000, 8080, 8081, 9000]
+
+    var quickPorts: [Int] {
+        let merged = defaultQuickPorts + customQuickPorts.filter { !defaultQuickPorts.contains($0) }
+        return merged.sorted()
+    }
 
     init(languageSettings: AppLanguageSettings) {
         self.languageSettings = languageSettings
         self.launchAtLogin = (SMAppService.mainApp.status == .enabled)
+        self.customQuickPorts = (UserDefaults.standard.array(forKey: "portfree.customQuickPorts") as? [Int]) ?? []
     }
 
     var statusMessage: String {
@@ -202,6 +214,21 @@ final class PortManagerViewModel: ObservableObject {
                 items.removeAll { $0.id == itemID }
             }
         }
+    }
+
+    func clearAllHistory() {
+        withAnimation {
+            items.removeAll()
+        }
+    }
+
+    func addCustomPort(_ port: Int) {
+        guard (1...65535).contains(port), !customQuickPorts.contains(port) else { return }
+        customQuickPorts.append(port)
+    }
+
+    func removeCustomPort(_ port: Int) {
+        customQuickPorts.removeAll { $0 == port }
     }
 
     func recentItems(limit: Int) -> [Item] {

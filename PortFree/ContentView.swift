@@ -11,6 +11,9 @@ struct ContentView: View {
     @EnvironmentObject private var viewModel: PortManagerViewModel
     @EnvironmentObject private var languageSettings: AppLanguageSettings
     @State private var showCopiedToast = false
+    @State private var isPortListExpanded = false
+    @State private var showAddPortField = false
+    @State private var newPortInput = ""
 
     var body: some View {
         NavigationSplitView {
@@ -79,7 +82,8 @@ struct ContentView: View {
                         .modifier(SidebarRowHoverEffect())
                     }
                 } else {
-                    ForEach(viewModel.allListeningPorts, id: \.port) { result in
+                    let visiblePorts = isPortListExpanded ? viewModel.allListeningPorts : Array(viewModel.allListeningPorts.prefix(5))
+                    ForEach(visiblePorts, id: \.port) { result in
                         Button {
                             viewModel.fillPortAndCheck(result.port)
                         } label: {
@@ -103,10 +107,59 @@ struct ContentView: View {
                         .buttonStyle(.plain)
                         .modifier(SidebarRowHoverEffect())
                     }
+
+                    if viewModel.allListeningPorts.count > 5 {
+                        Button {
+                            withAnimation { isPortListExpanded.toggle() }
+                        } label: {
+                            HStack {
+                                Text(isPortListExpanded ? t(.collapse) : t(.showAll, languageSettings.plainNumber(viewModel.allListeningPorts.count)))
+                                    .font(.caption)
+                                    .foregroundStyle(Color.accentColor)
+                                Spacer()
+                                Image(systemName: isPortListExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .modifier(SidebarRowHoverEffect())
+                    }
                 }
             }
 
-            Section(header: Text(t(.commonPorts))) {
+            Section(header: HStack {
+                Text(t(.commonPorts))
+                Spacer()
+                Button {
+                    withAnimation { showAddPortField.toggle() }
+                } label: {
+                    Image(systemName: showAddPortField ? "minus" : "plus")
+                }
+                .buttonStyle(.plain)
+                .help(t(.addCustomPort))
+            }) {
+                if showAddPortField {
+                    HStack(spacing: 8) {
+                        TextField(t(.portPlaceholder), text: $newPortInput)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit { addPort() }
+                        Button {
+                            addPort()
+                        } label: {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(newPortInput.isEmpty)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                }
+
                 ForEach(viewModel.quickPorts, id: \.self) { port in
                     Button {
                         viewModel.fillPortAndCheck(port)
@@ -114,8 +167,19 @@ struct ContentView: View {
                         HStack {
                             Text(t(.portWithNumber, languageSettings.plainNumber(port)))
                             Spacer()
-                            Image(systemName: "bolt.fill")
-                                .foregroundStyle(.secondary)
+                            if viewModel.customQuickPorts.contains(port) {
+                                Button {
+                                    withAnimation { viewModel.removeCustomPort(port) }
+                                } label: {
+                                    Image(systemName: "xmark.circle")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .help(t(.removeCustomPort))
+                            } else {
+                                Image(systemName: "bolt.fill")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)
@@ -126,7 +190,19 @@ struct ContentView: View {
                 }
             }
 
-            Section(header: Text(t(.recentHistory))) {
+            Section(header: HStack {
+                Text(t(.recentHistory))
+                Spacer()
+                if !viewModel.items.isEmpty {
+                    Button {
+                        viewModel.clearAllHistory()
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.plain)
+                    .help(t(.clearHistory))
+                }
+            }) {
                 if viewModel.items.isEmpty {
                     Text(t(.noHistory))
                         .foregroundStyle(.secondary)
@@ -377,6 +453,18 @@ struct ContentView: View {
 
     private func t(_ key: AppTextKey, _ arguments: CVarArg...) -> String {
         languageSettings.text(key, arguments)
+    }
+
+    private func addPort() {
+        let normalized = newPortInput
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: "，", with: "")
+        if let port = Int(normalized), (1...65535).contains(port) {
+            viewModel.addCustomPort(port)
+            newPortInput = ""
+            withAnimation { showAddPortField = false }
+        }
     }
 }
 

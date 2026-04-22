@@ -141,6 +141,11 @@ enum AppTextKey: String {
     case globalHotkeyHint
     case adminRequired
     case settings
+    case collapse
+    case showAll
+    case addCustomPort
+    case removeCustomPort
+    case clearHistory
 }
 
 @MainActor
@@ -369,7 +374,12 @@ enum AppTranslations {
             "copiedToClipboard": "Copied to clipboard",
             "globalHotkeyHint": "Press ⌘⇧P anywhere to open PortFree",
             "adminRequired": "Admin privileges required",
-            "settings": "Settings"
+            "settings": "Settings",
+            "collapse": "Collapse",
+            "showAll": "Show all %@ ports",
+            "addCustomPort": "Add custom port",
+            "removeCustomPort": "Remove custom port",
+            "clearHistory": "Clear history"
         ],
         .simplifiedChinese: [
             "language": "语言",
@@ -442,7 +452,12 @@ enum AppTranslations {
             "copiedToClipboard": "已复制到剪贴板",
             "globalHotkeyHint": "在任意位置按 ⌘⇧P 唤出 PortFree",
             "adminRequired": "需要管理员权限",
-            "settings": "设置"
+            "settings": "设置",
+            "collapse": "收起",
+            "showAll": "展开全部 %@ 个端口",
+            "addCustomPort": "添加自定义端口",
+            "removeCustomPort": "移除自定义端口",
+            "clearHistory": "清除历史"
         ],
         .traditionalChinese: [
             "language": "語言",
@@ -515,7 +530,12 @@ enum AppTranslations {
             "copiedToClipboard": "已複製到剪貼簿",
             "globalHotkeyHint": "在任意位置按 ⌘⇧P 呼出 PortFree",
             "adminRequired": "需要管理員權限",
-            "settings": "設定"
+            "settings": "設定",
+            "collapse": "收合",
+            "showAll": "展開全部 %@ 個連接埠",
+            "addCustomPort": "新增自訂連接埠",
+            "removeCustomPort": "移除自訂連接埠",
+            "clearHistory": "清除歷史"
         ],
         .japanese: [
             "language": "言語",
@@ -588,7 +608,12 @@ enum AppTranslations {
             "copiedToClipboard": "クリップボードにコピーしました",
             "globalHotkeyHint": "どこからでも ⌘⇧P で PortFree を呼び出せます",
             "adminRequired": "管理者権限が必要です",
-            "settings": "設定"
+            "settings": "設定",
+            "collapse": "折りたたむ",
+            "showAll": "全 %@ ポートを表示",
+            "addCustomPort": "カスタムポートを追加",
+            "removeCustomPort": "カスタムポートを削除",
+            "clearHistory": "履歴を消去"
         ],
         .german: [
             "language": "Sprache",
@@ -661,7 +686,12 @@ enum AppTranslations {
             "copiedToClipboard": "In Zwischenablage kopiert",
             "globalHotkeyHint": "⌘⇧P drücken, um PortFree von überall zu öffnen",
             "adminRequired": "Administratorrechte erforderlich",
-            "settings": "Einstellungen"
+            "settings": "Einstellungen",
+            "collapse": "Einklappen",
+            "showAll": "Alle %@ Ports anzeigen",
+            "addCustomPort": "Benutzerdefinierten Port hinzufügen",
+            "removeCustomPort": "Benutzerdefinierten Port entfernen",
+            "clearHistory": "Verlauf löschen"
         ],
         .french: [
             "language": "Langue",
@@ -734,7 +764,12 @@ enum AppTranslations {
             "copiedToClipboard": "Copié dans le presse-papiers",
             "globalHotkeyHint": "Appuyez sur ⌘⇧P depuis n'importe où pour ouvrir PortFree",
             "adminRequired": "Privilèges administrateur requis",
-            "settings": "Réglages"
+            "settings": "Réglages",
+            "collapse": "Réduire",
+            "showAll": "Afficher les %@ ports",
+            "addCustomPort": "Ajouter un port personnalisé",
+            "removeCustomPort": "Supprimer le port personnalisé",
+            "clearHistory": "Effacer l'historique"
         ],
         .spanish: [
             "language": "Idioma",
@@ -807,7 +842,12 @@ enum AppTranslations {
             "copiedToClipboard": "Copiado al portapapeles",
             "globalHotkeyHint": "Pulsa ⌘⇧P en cualquier lugar para abrir PortFree",
             "adminRequired": "Se requieren privilegios de administrador",
-            "settings": "Ajustes"
+            "settings": "Ajustes",
+            "collapse": "Contraer",
+            "showAll": "Mostrar los %@ puertos",
+            "addCustomPort": "Añadir puerto personalizado",
+            "removeCustomPort": "Eliminar puerto personalizado",
+            "clearHistory": "Borrar historial"
         ]
     ]
 }
