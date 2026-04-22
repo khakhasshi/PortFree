@@ -10,6 +10,16 @@ A lightweight macOS menu bar utility for developers who are tired of typing `lso
 
 </div>
 
+## Screenshots
+
+| Main Window | Menu Bar |
+|---|---|
+| ![Main Window](screenshots/main-window.png) | ![Menu Bar](screenshots/menubar-panel.png) |
+
+| Port Occupied Detail | All Listening Ports |
+|---|---|
+| ![Port Occupied](screenshots/port-occupied.png) | ![Scan All](screenshots/scan-all-ports.png) |
+
 ---
 
 ## Features
