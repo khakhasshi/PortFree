@@ -133,6 +133,19 @@ PortFree is designed to work well for both GUI-first and terminal-first develope
 - The main app performs port inspection and process actions locally
 - The widget reads shared data from the app group container
 
+## Privacy Statement
+
+PortFree is designed to be a local-first utility.
+
+- **No data collection** — PortFree does not collect personal data, analytics, tracking identifiers, or usage telemetry.
+- **No external servers** — Core features do not require a cloud service, account, or remote API.
+- **Local system access only** — Port inspection and process management are performed locally on your Mac using native system capabilities.
+- **Shared widget data** — The widget reads listening-port data from the shared app group container created by the main app.
+- **Administrative permission** — When a protected process requires elevated privileges, PortFree uses the native macOS authorization prompt.
+- **No sale or sharing of data** — PortFree does not sell, transmit, or share your data with third parties.
+
+If you discover a privacy or security concern, please report it by email.
+
 ## Tech Stack
 
 - SwiftUI
@@ -162,6 +175,11 @@ PortFree 是一款原生 macOS 开发者工具，用来快速查看端口占用�
 - 搜索、批量结束、自动刷新
 - 菜单栏快速操作
 - CLI 工具 `fp`
+
+## Contact
+
+- **Author** — JIANGJINGZHE
+- **Email** — contact@jiangjingzhe.com
 
 ## License
 
